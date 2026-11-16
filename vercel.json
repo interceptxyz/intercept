@@ -18,7 +18,7 @@
     },
     {
       "source": "/token",
-      "destination": "https://ponsfamily.com/launchpad/0xd893177bfe31e786b3e13734c3d7eabc6f786cb4",
+      "destination": "/intercept",
       "permanent": false
     },
     {

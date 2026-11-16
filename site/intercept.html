@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intercept · $INTERCEPT</title>
+<meta name="description" content="$INTERCEPT on Robinhood Chain: contract address, supply read from the chain, and where to trade it.">
+<link rel="canonical" href="https://www.intercepting.xyz/intercept">
+<meta name="theme-color" content="#050608">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.intercepting.xyz/intercept">
+<meta property="og:title" content="$INTERCEPT · Intercept">
+<meta property="og:description" content="The Intercept token on Robinhood Chain. Contract 0xd893177bfe31e786b3e13734c3d7eabc6f786cb4.">
+<meta property="og:image" content="https://www.intercepting.xyz/og.png?v=2">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@interdotxyz">
+<meta name="twitter:title" content="$INTERCEPT · Intercept">
+<meta name="twitter:description" content="The Intercept token on Robinhood Chain.">
+<meta name="twitter:image" content="https://www.intercepting.xyz/og.png?v=2">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" href="/liquid.frag" as="fetch" crossorigin>
+<link rel="stylesheet" href="/site.css">
+<style>
+  .tk-hero { min-height: auto; padding-bottom: 72px; }
+  .tk-hero .hero-grid { padding: 40px 0 0; }
+  .tk-ca { margin-top: 34px; display: flex; box-sizing: border-box; align-items: center; gap: 10px; max-width: 100%; padding: 8px 8px 8px 18px; border: 1px solid var(--line-2, rgba(255,255,255,.14)); border-radius: 100px; background: rgba(10, 12, 16, .6); backdrop-filter: blur(10px); }
+  .tk-ca code { font: 500 14px/1 ui-monospace, 'SFMono-Regular', Menlo, monospace; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tk-ca button { flex: none; height: 34px; padding: 0 16px; border-radius: 100px; background: #eef1f6; color: #050608; font: 500 13px/1 var(--display); cursor: pointer; border: 0; }
+  .tk-sec { padding: 0 0 120px; }
+  .tk-grid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .tk-cell { padding: 26px 28px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-height: 108px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; }
+  .tk-cell:nth-child(3n) { border-right: 0; }
+  .tk-cell:nth-last-child(-n+3) { border-bottom: 0; }
+  .tk-cell span { font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); }
+  .tk-cell b { font: 500 24px/1.15 var(--display); letter-spacing: -.02em; color: var(--fg); overflow-wrap: anywhere; }
+  .tk-cell b.sm { font-size: 16px; }
+  .tk-cell b small { font: 400 13px var(--text); color: var(--fg-3); margin-left: 6px; }
+  .tk-live { display: inline-flex; align-items: center; gap: 8px; }
+  .tk-live i { width: 6px; height: 6px; border-radius: 50%; background: #7fbf96; box-shadow: 0 0 0 3px rgba(127,191,150,.15); }
+  .tk-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin: 0 0 18px; }
+  .tk-row h2 { font: 500 clamp(24px, 2.4vw, 32px)/1.1 var(--display); letter-spacing: -.03em; margin: 0; }
+  .tk-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .tk-note { margin-top: 22px; max-width: 80ch; font-size: 13.5px; line-height: 1.6; color: var(--fg-3); }
+  .tk-msg { font-size: 13px; color: var(--fg-3); min-height: 1em; }
+  @media (max-width: 860px) {
+    .tk-grid { grid-template-columns: 1fr 1fr; }
+    .tk-cell:nth-child(3n) { border-right: 1px solid var(--line); }
+    .tk-cell:nth-child(2n) { border-right: 0; }
+    .tk-cell:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
+    .tk-cell:nth-last-child(-n+2) { border-bottom: 0; }
+  }
+  @media (max-width: 520px) {
+    .tk-grid { grid-template-columns: 1fr; }
+    .tk-cell, .tk-cell:nth-child(n) { border-right: 0; border-bottom: 1px solid var(--line); }
+    .tk-cell:last-child { border-bottom: 0; }
+    .tk-ca code { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<!--#nav-->
+
+<main id="main">
+  <section class="hero tk-hero">
+    <div class="hero-bg" aria-hidden="true"><canvas id="ix-bg" data-liquid></canvas></div>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow rv" style="--d:.1s"><span class="eb-mark"></span>Robinhood Chain</p>
+        <h1 class="rv" style="--d:.2s">$INTERCEPT</h1>
+        <p class="lede rv" style="--d:.35s">The Intercept token, launched on Pons on Robinhood Chain. Always check the contract address below before you trade.</p>
+        <div class="tk-ca rv" style="--d:.45s"><code id="ca">0xd893177bfe31e786b3e13734c3d7eabc6f786cb4</code><button type="button" id="copy-ca">Copy</button></div>
+        <div class="ctas rv" style="--d:.55s">
+          <a class="btn btn-primary" href="https://ponsfamily.com/launchpad/0xd893177bfe31e786b3e13734c3d7eabc6f786cb4" target="_blank" rel="noopener">Trade on Pons <span class="ne" aria-hidden="true">↗</span></a>
+          <a class="btn btn-ghost" href="https://robinhoodchain.blockscout.com/token/0xd893177bfe31e786b3e13734c3d7eabc6f786cb4" target="_blank" rel="noopener">View on explorer <span class="ne" aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tk-sec">
+    <div class="wrap">
+      <div class="tk-row">
+        <h2>Token details</h2>
+        <span class="tk-live" id="live" hidden><i></i><span class="tk-msg">Read from the chain</span></span>
+      </div>
+      <div class="tk-grid">
+        <div class="tk-cell"><span>Name</span><b id="t-name">Intercept</b></div>
+        <div class="tk-cell"><span>Symbol</span><b id="t-symbol">Intercept</b></div>
+        <div class="tk-cell"><span>Total supply</span><b id="t-supply">1,000,000,000</b></div>
+        <div class="tk-cell"><span>Chain</span><b>Robinhood Chain<small>ID 4663</small></b></div>
+        <div class="tk-cell"><span>Decimals</span><b id="t-dec">18</b></div>
+        <div class="tk-cell"><span>Launchpad</span><b>Pons</b></div>
+      </div>
+      <div class="tk-row" style="margin-top:28px">
+        <div class="tk-actions">
+          <button class="btn btn-ghost" type="button" id="add-wallet">Add to wallet</button>
+          <a class="btn btn-ghost" href="https://x.com/interdotxyz" target="_blank" rel="noopener">Follow @interdotxyz <span class="ne" aria-hidden="true">↗</span></a>
+        </div>
+        <span class="tk-msg" id="wallet-msg" role="status" aria-live="polite"></span>
+      </div>
+      <p class="tk-note">Holding $INTERCEPT is not required to use Intercept, and the token gives no rights to the company, its revenue or its API. Tokens are volatile and can lose all their value. Nothing on this page is financial advice.</p>
+    </div>
+  </section>
+</main>
+
+<!--#footer-->
+
+<script>
+(function () {
+  const CA = '0xd893177bfe31e786b3e13734c3d7eabc6f786cb4';
+  const RPC = 'https://rpc.mainnet.chain.robinhood.com';
+  const $ = (id) => document.getElementById(id);
+  let symbol = 'Intercept';
+
+  $('copy-ca').addEventListener('click', () => {
+    navigator.clipboard.writeText(CA).then(() => { $('copy-ca').textContent = 'Copied'; setTimeout(() => { $('copy-ca').textContent = 'Copy'; }, 1600); });
+  });
+
+  // live values: ERC-20 name(), symbol(), totalSupply(), decimals()
+  const call = (data) => fetch(RPC, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: CA, data }, 'latest'] }) }).then((r) => r.json()).then((j) => j.result);
+  const str = (hex) => { const len = parseInt(hex.slice(66, 130), 16); return decodeURIComponent(hex.slice(130, 130 + len * 2).replace(/(..)/g, '%$1')); };
+  Promise.all([call('0x06fdde03'), call('0x95d89b41'), call('0x18160ddd'), call('0x313ce567')]).then(([n, s, t, d]) => {
+    if (!n || !t) return;
+    const dec = parseInt(d, 16);
+    const supply = BigInt(t) / 10n ** BigInt(dec);
+    $('t-name').textContent = str(n);
+    symbol = str(s); $('t-symbol').textContent = symbol;
+    $('t-dec').textContent = String(dec);
+    $('t-supply').textContent = supply.toLocaleString('en-US');
+    $('live').hidden = false;
+  }).catch(() => {});
+
+  // add Robinhood Chain (if needed) and the token to an EVM wallet
+  $('add-wallet').addEventListener('click', async () => {
+    const eth = window.ethereum;
+    const msg = $('wallet-msg');
+    if (!eth) { msg.textContent = 'No EVM wallet found in this browser.'; return; }
+    try {
+      await eth.request({ method: 'wallet_addEthereumChain', params: [{ chainId: '0x1237', chainName: 'Robinhood Chain', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: [RPC], blockExplorerUrls: ['https://robinhoodchain.blockscout.com'] }] });
+      const ok = await eth.request({ method: 'wallet_watchAsset', params: { type: 'ERC20', options: { address: CA, symbol: symbol.slice(0, 11), decimals: 18 } } });
+      msg.textContent = ok ? '$INTERCEPT added to your wallet.' : 'Cancelled.';
+    } catch (e) { msg.textContent = e && e.code === 4001 ? 'Cancelled.' : 'Your wallet could not add the token.'; }
+  });
+})();
+</script>
+<script src="/gradient.js" defer></script>
+<script src="/site.js" defer></script>
+</body>
+</html>

@@ -105,7 +105,7 @@ h1 { margin-top: 28px; font: 500 clamp(40px, 4.9vw, 70px)/1.03 var(--display); l
 .foot-in { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; padding-top: 28px; padding-bottom: 28px; font-size: 13px; color: var(--fg-3); }
 .foot .brand { font-size: 15px; color: var(--fg); }
 .foot .brand img { width: 18px; height: 18px; }
-.foot nav { display: flex; gap: 22px; }
+.foot nav { display: flex; flex-wrap: wrap; gap: 12px 22px; }
 .foot nav a:hover { color: var(--fg); }
 .foot p { margin-left: auto; }
 
