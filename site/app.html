@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intercept · Sign in</title>
+<meta name="description" content="Sign in to Intercept.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#050608">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/console.css">
+</head>
+<body class="app-body">
+<div class="app-bg" aria-hidden="true"><canvas data-liquid="soft"></canvas></div>
+
+<!-- signed out: auth -->
+<main class="auth" id="auth" hidden>
+  <div class="auth-col">
+    <div class="auth-top">
+      <a class="brand" href="https://www.intercepting.xyz/" aria-label="Intercept home"><img src="/mark.png" alt="" width="22" height="22"><span>Intercept</span></a>
+      <div>
+        <h1>Welcome to Intercept</h1>
+        <p>Log in or sign up. It only takes a moment.</p>
+      </div>
+    </div>
+
+    <div class="auth-block">
+      <span class="fw-line top" aria-hidden="true"></span>
+      <button class="wbtn is-primary" id="btn-wallet" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a1 1 0 0 1 1 1v2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="8" width="18" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16.5" cy="13.5" r="1.3" fill="currentColor"/></svg>
+        Continue with a wallet<span class="wtag">Multi-wallet</span>
+      </button>
+      <div class="auth-div"><span>Or continue with email</span></div>
+      <form class="auth-form" id="email-form" novalidate>
+        <label class="sr" for="email">Email address</label>
+        <div class="in-group"><span class="in-ic" aria-hidden="true">@</span><input id="email" type="email" autocomplete="email" placeholder="your.email@example.com" required></div>
+        <button class="btn btn-ghost auth-full" type="submit" disabled>Continue with email</button>
+      </form>
+      <form class="auth-form" id="code-form" novalidate hidden>
+        <p class="auth-sent">We sent a 6-digit code to <b id="sent-to"></b>.</p>
+        <label class="sr" for="code">Verification code</label>
+        <div class="in-group"><span class="in-ic" aria-hidden="true">#</span><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required></div>
+        <button class="btn btn-primary auth-full" type="submit">Verify and sign in</button>
+        <button class="auth-back" type="button" id="code-back">Use another email</button>
+      </form>
+      <p class="auth-msg" id="auth-msg" role="status" aria-live="polite"></p>
+      <span class="fw-line bottom" aria-hidden="true"></span>
+    </div>
+
+    <p class="auth-foot">Authentication is provided by Privy. Connecting a wallet never moves funds. <a href="https://www.intercepting.xyz/product">Product</a> · <a href="https://docs.intercepting.xyz">Documentation</a></p>
+  </div>
+</main>
+
+<!-- signed in: console (layout after efferd app-shell-3) -->
+<div class="shell" id="ws" hidden>
+  <aside class="sb" id="sb" aria-label="Console navigation">
+    <div class="sb-head">
+      <a class="sb-brand" href="#/overview"><img src="/mark.png" alt="" width="20" height="20"><span>Intercept</span><em>Console</em></a>
+    </div>
+    <div class="sb-org"><select id="org-select" aria-label="Organization"></select></div>
+    <div class="sb-act">
+      <a class="sb-new" href="#/evaluate" title="New evaluation"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>New evaluation</span></a>
+      <button class="sb-search" type="button" id="open-cmd" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></button>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <div class="sb-latest" id="sb-latest">
+        <span class="sb-l-badge">API v1</span>
+        <p class="sb-l-title">Transactions are decoded and simulated</p>
+        <span class="sb-l-desc">Real transaction bytes, real prices, signed authorizations.</span>
+        <a href="https://api.intercepting.xyz/v1/openapi.json" target="_blank" rel="noopener">OpenAPI spec</a>
+        <button type="button" class="sb-l-x" aria-label="Dismiss">×</button>
+      </div>
+      <a class="sb-link" href="https://docs.intercepting.xyz" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></svg><span>Documentation</span></a>
+      <a class="sb-link" href="https://www.intercepting.xyz/product" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/></svg><span>Product</span></a>
+    </div>
+  </aside>
+  <div class="sb-scrim" id="sb-scrim"></div>
+
+  <div class="main">
+    <header class="hd">
+      <div class="hd-l">
+        <button class="ib" id="sb-toggle" type="button" aria-label="Toggle sidebar"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/></svg></button>
+        <span class="hd-sep"></span>
+        <nav class="crumb" id="crumb" aria-label="Breadcrumb"></nav>
+      </div>
+      <div class="hd-r">
+        <a class="ib" href="#/evaluate" aria-label="New evaluation" title="New evaluation"><svg viewBox="0 0 24 24"><path d="m21 3-9.5 9.5M21 3l-6.5 18-3-8.5L3 9.5 21 3Z"/></svg></a>
+        <div class="menu-wrap">
+          <button class="ib" id="bell" type="button" aria-label="Pending approvals"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><i class="dot" id="bell-dot" hidden></i></button>
+          <div class="menu" id="bell-menu" hidden></div>
+        </div>
+        <span class="hd-sep"></span>
+        <div class="menu-wrap">
+          <button class="avatar" id="avatar" type="button" aria-label="Account"></button>
+          <div class="menu menu-user" id="user-menu" hidden>
+            <div class="mu-head"><span class="avatar sm" id="avatar2"></span><div><b id="mu-name"></b><span id="mu-kind"></span></div></div>
+            <a href="#/settings">Account settings</a>
+            <a href="#/keys">API keys</a>
+            <a href="https://docs.intercepting.xyz" target="_blank" rel="noopener">Help center</a>
+            <button type="button" id="signout">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main class="view" id="view" tabindex="-1"></main>
+  </div>
+</div>
+
+<div class="cmd" id="cmd" hidden><div class="cmd-box" role="dialog" aria-label="Go to"><input id="cmd-q" placeholder="Go to…" autocomplete="off"><ul id="cmd-list"></ul></div></div>
+<div class="modal" id="modal" hidden><div class="modal-box" role="dialog" aria-modal="true" id="modal-box"></div></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="/gradient.js" defer></script>
+<script src="/app.js" defer></script>
+<script src="/console.js" defer></script>
+<script type="module" src="/privy/privy.js"></script>
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intercept · The platform</title>
+<meta name="description" content="Configure your policies. Connect your agent. Secure its execution. Intercept is the risk and security API for autonomous agents: Risk Engine, Transaction Firewall, Policy Engine and Autonomous Guardian.">
+<link rel="canonical" href="https://www.intercepting.xyz/product">
+<meta name="theme-color" content="#050608">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.intercepting.xyz/product">
+<meta property="og:title" content="Intercept · The platform">
+<meta property="og:description" content="Agents decide. Intercept enforces. Programmable risk management and transaction security for autonomous agents, through one API.">
+<meta property="og:image" content="https://www.intercepting.xyz/og.png?v=2">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@interdotxyz">
+<meta name="twitter:title" content="Intercept · The platform">
+<meta name="twitter:description" content="Agents decide. Intercept enforces.">
+<meta name="twitter:image" content="https://www.intercepting.xyz/og.png?v=2">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" href="/liquid.frag" as="fetch" crossorigin>
+<link rel="stylesheet" href="/site.css">
+<link rel="stylesheet" href="/product.css">
+</head>
+<body class="pp">
+<a class="skip" href="#main">Skip to content</a>
+<!--#nav-->
+
+<main id="main">
+  <!-- ============ hero ============ -->
+  <section class="hero pp-hero">
+    <div class="hero-bg" aria-hidden="true"><canvas id="ix-bg" data-liquid></canvas></div>
+    <div class="wrap pp-hero-in">
+      <div class="pp-hero-copy">
+        <p class="eyebrow rv" style="--d:.1s"><span class="eb-mark"></span>The Intercept platform</p>
+        <h1 class="rv" style="--d:.2s">Agents decide. Intercept enforces.</h1>
+        <p class="lede rv" style="--d:.35s">Define financial boundaries and security policies in the dashboard, give your agent a dedicated API key, and every proposed transaction is evaluated before execution. One integration, programmable protection.</p>
+        <div class="ctas rv" style="--d:.5s">
+          <a class="btn btn-primary" href="https://docs.intercepting.xyz">Explore Documentation</a>
+          <a class="btn btn-ghost" href="https://app.intercepting.xyz">Open App <span class="ne" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <figure class="pp-stage rv" style="--d:.55s">
+        <div class="pp-stage-frame">
+          <i class="tk tl"></i><i class="tk tr"></i><i class="tk bl"></i><i class="tk br"></i>
+          <svg id="hero-viz" viewBox="0 0 1120 360" role="img" aria-label="Conceptual diagram: an agent submits proposed transactions to the Intercept API, which approves them, blocks them, or escalates them for owner approval before execution onchain."></svg>
+        </div>
+        <figcaption><span>Conceptual visualization · simulated, not live data</span><span class="pp-legend"><i class="lg ok"></i>Approved <i class="lg bad"></i>Intercepted <i class="lg hold"></i>Escalated</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ overview ============ -->
+  <section class="pp-sec pp-overview" id="overview">
+    <div class="wrap">
+      <div class="pp-head">
+        <p class="kicker">How Intercept works</p>
+        <h2>Configure. Connect.<br><span class="muted">Protect.</span></h2>
+        <p class="pp-note">Developers should not have to build their own risk management system, transaction firewall or security monitoring. Intercept provides them through a single API, configured from the dashboard and independent of the AI model your agent runs on.</p>
+      </div>
+      <ol class="mods">
+        <li><a href="https://app.intercepting.xyz"><span class="mods-i">01</span><span class="mods-t">Register your agent</span><span class="mods-d">Each agent has its own identity, wallet, policy and activity history. Manage many agents from one account.</span><span class="mods-k">Preview</span><span class="mods-a">→</span></a></li>
+        <li><a href="https://app.intercepting.xyz"><span class="mods-i">02</span><span class="mods-t">Configure your protection</span><span class="mods-d">Financial limits and security rules, stored on Intercept and versioned. Update them without touching the agent’s code or key.</span><span class="mods-k">Preview</span><span class="mods-a">→</span></a></li>
+        <li><a href="https://app.intercepting.xyz"><span class="mods-i">03</span><span class="mods-t">Generate an API key</span><span class="mods-d">One key per agent, restricted to evaluation and revocable at any time. An agent can never change its own policies.</span><span class="mods-k">Preview</span><span class="mods-a">→</span></a></li>
+        <li><a href="#developers"><span class="mods-i">04</span><span class="mods-t">Connect your agent</span><span class="mods-d">Submit proposed transactions before execution through the REST API v1. An npm SDK, MCP and framework integrations are in development.</span><span class="mods-k">REST v1 live</span><span class="mods-a">→</span></a></li>
+        <li><a href="https://app.intercepting.xyz"><span class="mods-i">05</span><span class="mods-t">Monitor and protect</span><span class="mods-d">Review every decision and its reasons, approve held transactions, pause agents and revoke keys from the dashboard.</span><span class="mods-k">Preview</span><span class="mods-a">→</span></a></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ sticky product nav ============ -->
+  <nav class="subnav" aria-label="Product sections">
+    <div class="wrap subnav-in">
+      <a href="#risk-engine"><i>01</i>Risk Engine</a>
+      <a href="#transaction-firewall"><i>02</i>Transaction Firewall</a>
+      <a href="#autonomous-guardian"><i>03</i>Autonomous Guardian</a>
+      <a href="#intercept-network"><i>04</i>Intercept Network</a>
+      <a href="#simulator">Simulator</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#developers">Developers</a>
+    </div>
+  </nav>
+
+  <!-- ============ 01 risk engine ============ -->
+  <section class="pp-sec mod" id="risk-engine">
+    <div class="wrap mod-grid">
+      <div class="mod-copy">
+        <p class="mod-n"><span>01</span>Risk Engine</p>
+        <h2>Autonomy within defined boundaries.</h2>
+        <p class="mod-lede">Programmable financial risk management. The Risk Engine evaluates each proposed transaction against the agent’s financial boundaries, so it never operates outside what you authorized.</p>
+        <ul class="caps">
+          <li>Maximum position size</li><li>Maximum leverage</li><li>Maximum daily spending</li><li>Maximum portfolio exposure</li><li>Maximum daily loss</li><li>Maximum drawdown</li><li>Maximum slippage</li><li>Minimum liquidity</li><li>Asset and protocol exposure limits</li>
+        </ul>
+        <p class="mod-status"><span><i class="st-dot ok"></i><b>Live</b> transaction value, rolling daily spending, position size, portfolio exposure, concentration, swap slippage, liquidity, per-protocol exposure and approval thresholds, priced from fresh market data.</span><span><i class="st-dot hold"></i><b>In development</b> leverage, daily loss and drawdown, which need validated protocol adapters.</span></p>
+        <a class="mod-link" href="https://docs.intercepting.xyz/risk-management/overview">Risk Engine documentation <span>↗</span></a>
+      </div>
+
+      <div class="panel risk" id="risk-panel">
+        <div class="panel-bar"><span class="pb-dot"></span><span>policy · agent-trader-01</span><span class="pb-tag">Illustrative</span></div>
+        <div class="risk-body">
+          <div class="risk-policy">
+            <p class="pl">Active policy</p>
+            <dl>
+              <div><dt>Portfolio value</dt><dd>$50,000</dd></div>
+              <div><dt>Maximum leverage</dt><dd>3x</dd></div>
+              <div><dt>Maximum position size</dt><dd>$5,000</dd></div>
+              <div><dt>Maximum daily loss</dt><dd>2%</dd></div>
+              <div><dt>Maximum slippage</dt><dd>0.5%</dd></div>
+            </dl>
+          </div>
+          <div class="risk-trade">
+            <p class="pl">Proposed trade <span class="pl-sub">SOL-PERP · long</span></p>
+            <label class="rng"><span>Leverage <b id="rv-lev">5.0x</b></span><input type="range" id="r-lev" min="1" max="10" step="0.5" value="5"></label>
+            <label class="rng"><span>Position size <b id="rv-size">$4,500</b></span><input type="range" id="r-size" min="500" max="10000" step="250" value="4500"></label>
+            <label class="rng"><span>Expected slippage <b id="rv-slip">0.30%</b></span><input type="range" id="r-slip" min="0.05" max="1.5" step="0.05" value="0.3"></label>
+            <label class="rng"><span>Realized loss today <b id="rv-loss">0.6%</b></span><input type="range" id="r-loss" min="0" max="3" step="0.1" value="0.6"></label>
+          </div>
+        </div>
+        <div class="risk-checks" id="risk-checks"></div>
+        <div class="verdict" id="risk-verdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 transaction firewall ============ -->
+  <section class="pp-sec mod" id="transaction-firewall">
+    <div class="wrap mod-grid rev">
+      <div class="mod-copy">
+        <p class="mod-n"><span>02</span>Transaction Firewall</p>
+        <h2>Stop malicious transactions before execution.</h2>
+        <p class="mod-lede">Pre-execution transaction security. The firewall is designed to analyze instructions, simulated asset movements, program interactions, recipients, permissions and known threats, and to stop unauthorized or suspicious execution.</p>
+        <ul class="caps">
+          <li>Authorized protocols</li><li>Authorized wallet addresses</li><li>Restricted programs</li><li>Unauthorized transfer prevention</li><li>Transaction simulation requirements</li><li>Permission change restrictions</li><li>Human approval thresholds</li><li>Emergency execution suspension</li>
+        </ul>
+        <p class="mod-aside"><b>An API key alone is not enforcement.</b> If an agent holds an unrestricted private key, it can send transactions onchain without asking Intercept. In <b>Evaluation mode</b>, Intercept returns a decision and the agent is expected to respect it. <b>Enforced Execution mode</b> routes signing through a restricted signing environment, delegated permissions or a compatible smart account, so a blocked transaction cannot be executed. It is in development and will be validated through security research.</p>
+        <p class="mod-status"><span><i class="st-dot ok"></i><b>Live</b> decoding and simulating the real serialized transaction, program, recipient and token allow and block lists, delegate approvals, authority changes, unknown instructions and unexplained outflows.</span><span><i class="st-dot hold"></i><b>In development</b> more protocol decoders and Token-2022 extensions.</span></p>
+        <a class="mod-link" href="https://docs.intercepting.xyz/security/transaction-firewall">Firewall documentation <span>↗</span></a>
+      </div>
+
+      <div class="panel fw" id="fw-panel">
+        <div class="panel-bar"><span class="pb-dot"></span><span>firewall · replay</span><span class="pb-tag">Illustrative</span></div>
+        <div class="fw-tx" id="fw-tx"></div>
+        <ol class="fw-steps" id="fw-steps"></ol>
+        <div class="verdict" id="fw-verdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 autonomous guardian ============ -->
+  <section class="pp-sec mod" id="autonomous-guardian">
+    <div class="wrap mod-grid">
+      <div class="mod-copy">
+        <p class="mod-n"><span>03</span>Autonomous Guardian <em class="badge">Planned</em></p>
+        <h2>Continuous monitoring. Immediate response.</h2>
+        <p class="mod-lede">Continuous monitoring and incident response. The Guardian will watch agent activity, identify repeated policy violations and abnormal behavior, and trigger the defensive responses you predefine.</p>
+        <ul class="caps">
+          <li>Activity monitoring</li><li>Repeated violation detection</li><li>Abnormal behavior detection</li><li>Alerts</li><li>Human approval escalation</li><li>API key revocation</li><li>Agent suspension</li><li>Delegated permission suspension</li>
+        </ul>
+        <p class="mod-status"><span><i class="st-dot ok"></i><b>Live</b> approval queue, alerts, signed webhooks, agent pause, key revocation, organization emergency stop and audit log.</span><span><i class="st-dot mute"></i><b>Future</b> automated detection and response.</span></p>
+        <a class="mod-link" href="https://docs.intercepting.xyz/security/emergency-controls">Emergency controls documentation <span>↗</span></a>
+      </div>
+
+      <div class="panel soc" id="soc-panel">
+        <div class="panel-bar"><span class="pb-dot"></span><span>guardian · incident INC-0042</span><span class="pb-tag">Illustrative</span><button class="pb-btn" id="soc-replay" type="button">Replay</button></div>
+        <div class="soc-meter">
+          <div class="soc-m"><span>Agent</span><b>agent-trader-01</b></div>
+          <div class="soc-m"><span>State</span><b id="soc-state">Active</b></div>
+          <div class="soc-m"><span>Risk score</span><b id="soc-score">12</b></div>
+        </div>
+        <div class="soc-spark"><svg id="soc-spark" viewBox="0 0 520 70" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+        <ol class="soc-log" id="soc-log"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 intercept network ============ -->
+  <section class="pp-sec mod" id="intercept-network">
+    <div class="wrap mod-grid rev">
+      <div class="mod-copy">
+        <p class="mod-n"><span>04</span>Intercept Network <em class="badge">Future</em></p>
+        <h2>Individual protection. Collective defense.</h2>
+        <p class="mod-lede">The long-term threat intelligence layer: connected agents and protocols benefit from shared security intelligence. It extends the core API and is not required for the initial product.</p>
+        <ul class="caps">
+          <li>Shared malicious address registries</li><li>Suspicious program detection</li><li>Verified threat reports</li><li>Security intelligence distribution</li><li>Coordinated defensive responses</li><li>Stolen fund tracing</li>
+        </ul>
+        <p class="mod-status"><span><i class="st-dot mute"></i><b>Future</b> every capability of the Intercept Network.</span></p>
+        <a class="mod-link" href="https://docs.intercepting.xyz/network/overview">Network documentation <span>↗</span></a>
+      </div>
+
+      <div class="panel net">
+        <div class="panel-bar"><span class="pb-dot"></span><span>network · signal propagation</span><span class="pb-tag">Future</span></div>
+        <svg id="net-viz" viewBox="0 0 560 420" role="img" aria-label="Conceptual network: one participant reports a threat, operators verify it in the registry, and the signal propagates to every connected agent, wallet and protocol."></svg>
+        <p class="net-status" id="net-status" aria-live="polite">Registry idle</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ simulator ============ -->
+  <section class="pp-sec sim" id="simulator">
+    <div class="wrap">
+      <div class="pp-head">
+        <p class="kicker">Interactive demonstration</p>
+        <h2>See Intercept in action.</h2>
+        <p class="pp-note">Pick a scenario. Each proposed transaction is evaluated by the Risk Engine (financial risk) and by the Transaction Firewall (security) independently, then a single decision is issued. Scenarios here are illustrative and scripted in your browser. To evaluate against your own policy, use the <a href="https://app.intercepting.xyz" style="text-decoration:underline;text-underline-offset:3px">console</a>.</p>
+      </div>
+      <div class="sim-grid">
+        <div class="sim-list" role="tablist" aria-label="Scenarios" id="sim-list"></div>
+        <div class="panel sim-panel" id="sim-panel" role="tabpanel" aria-live="polite">
+          <div class="panel-bar"><span class="pb-dot"></span><span id="sim-title">scenario</span><span class="pb-tag">Illustrative demonstration</span></div>
+          <div class="sim-tx" id="sim-tx"></div>
+          <div class="sim-cols">
+            <div class="sim-col"><p class="pl">Financial risk · Risk Engine</p><ul id="sim-risk"></ul></div>
+            <div class="sim-col"><p class="pl">Security · Transaction Firewall</p><ul id="sim-sec"></ul></div>
+          </div>
+          <div class="sim-pol"><p class="pl">Triggered policies</p><div id="sim-pol"></div></div>
+          <div class="verdict" id="sim-verdict"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ architecture ============ -->
+  <section class="pp-sec arch" id="architecture">
+    <div class="wrap">
+      <div class="pp-head">
+        <p class="kicker">Architecture</p>
+        <h2>Security embedded into the execution layer.</h2>
+        <p class="pp-note">The backend is the source of truth: every request is authenticated, evaluated against the latest version of the agent’s policy and recorded. The frontend never enforces security rules. The agent proposes, Intercept decides, and the integrated execution environment enforces the decision.</p>
+      </div>
+      <div class="arch-frame">
+        <i class="tk tl"></i><i class="tk tr"></i><i class="tk bl"></i><i class="tk br"></i>
+        <svg id="arch-viz" viewBox="0 0 1000 620" role="img" aria-label="Architecture: autonomous agent, API request with key, Intercept with Risk Engine, Transaction Firewall and Policy Engine, authorization decision, enforcement, onchain execution. Autonomous Guardian and Intercept Network connect to Intercept."></svg>
+      </div>
+      <div class="life">
+        <div class="life-col">
+          <p class="kicker">Transaction lifecycle</p>
+          <ol class="life-list">
+            <li>The agent generates a proposed transaction.</li>
+            <li>It submits the transaction through the Intercept API.</li>
+            <li>Intercept authenticates the agent from its API key.</li>
+            <li>It retrieves the agent’s active policy version.</li>
+            <li>The transaction is decoded and simulated. <em>In development</em></li>
+            <li>The Risk Engine evaluates its financial impact.</li>
+            <li>The Transaction Firewall evaluates its security implications.</li>
+            <li>The Policy Engine checks compliance with the configured rules.</li>
+            <li>Intercept returns an authorization decision.</li>
+            <li>The integrated execution environment enforces it. <em>Enforced mode in development</em></li>
+            <li>The evaluation is recorded in the agent’s history.</li>
+          </ol>
+          <p class="life-out"><span class="code-chip">APPROVED</span><span class="code-chip">BLOCKED</span><span class="code-chip">REQUIRES_APPROVAL</span>, each with an explanation, the triggered policies, risk details and an evaluation ID.</p>
+        </div>
+        <div class="life-col">
+          <p class="kicker">Integration modes</p>
+          <div class="mode"><p class="mode-h">Evaluation mode <span class="pill-s ok">Live</span></p><p>The agent calls the API inside its existing workflow and receives decisions, risk analysis and monitoring. It relies on the agent respecting the decision.</p></div>
+          <div class="mode"><p class="mode-h">Enforced Execution mode <span class="pill-s ok">Live · v1</span></p><p>The signer only signs with a signed, single-use Intercept authorization bound to the exact transaction. Agents cannot bypass their policies as long as the signing key stays behind that check. A hosted signer and on-chain enforcement are in development.</p></div>
+          <p class="mode-note">An API key identifies the agent. It does not, on its own, stop an agent that holds an unrestricted private key.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ developers ============ -->
+  <section class="pp-sec dev" id="developers">
+    <div class="wrap dev-grid">
+      <div class="dev-copy">
+        <p class="kicker">Developers</p>
+        <h2>Built for developers. Designed for autonomy.</h2>
+        <p class="pp-note">Integrate Intercept where your agent creates transactions, whatever model or framework it runs on. Trading agents, portfolio managers, DeFi agents and automated payment systems all follow the same workflow.</p>
+        <ol class="dev-list dev-steps">
+          <li><b>Create an agent</b> in the dashboard.</li>
+          <li><b>Configure its policies.</b></li>
+          <li><b>Generate its API key</b> and store it as a secret.</li>
+          <li><b>Install the integration.</b> REST today; SDKs and MCP in development.</li>
+          <li><b>Submit transactions</b> for evaluation before execution.</li>
+          <li><b>Receive the decision</b> and its reasons.</li>
+          <li><b>Execute</b> through the configured signing environment.</li>
+        </ol>
+        <p class="dev-warn"><b>What is available.</b> In preview: the REST evaluation endpoint with per-agent API keys, evaluating the parameters your agent declares. Not yet released: TypeScript and Python SDKs, MCP and agent framework integrations, transaction decoding and simulation, Enforced Execution mode. The SDK example is illustrative.</p>
+        <a class="mod-link" href="https://docs.intercepting.xyz/developers/integration-overview">Integration guide <span>↗</span></a>
+      </div>
+      <div class="code panel">
+        <div class="code-tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-tab="rest">REST · preview</button>
+          <button role="tab" aria-selected="false" data-tab="ts">agent.ts · illustrative</button>
+          <button role="tab" aria-selected="false" data-tab="json">policy.json</button>
+          <button class="code-copy" type="button">Copy</button>
+        </div>
+<pre class="code-pane" data-pane="rest"><code>// POST https://app.intercepting.xyz/api/evaluate  (preview)
+// The key identifies the agent and can only request evaluations.
+
+curl -X POST https://app.intercepting.xyz/api/evaluate \
+  -H "Authorization: Bearer $INTERCEPT_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "transaction": {
+      "type": "perp_open",
+      "amountUsd": 2000,
+      "leverage": 8,
+      "slippageBps": 30,
+      "program": "Jupiter"
+    }
+  }'
+
+// → { "decision": { "id": "dec_…", "status": "blocked",
+//      "reasons": [{ "code": "RISK_MAX_LEVERAGE", "message": "Leverage: 8x / max 3x" }],
+//      "policyVersion": 4, "checks": [ … ] } }</code></pre>
+<pre class="code-pane" data-pane="ts" hidden><code>import { Intercept } from "@intercept/sdk"; // illustrative, not published
+
+const intercept = new Intercept({
+  apiKey: process.env.INTERCEPT_API_KEY, // identifies the agent
+});
+
+export async function execute(tx: Transaction) {
+  const decision = await intercept.evaluate({ transaction: tx });
+
+  switch (decision.status) {
+    case "approved":
+      return signAndSend(tx);
+    case "requires_approval":
+      return queueForOwner(tx, decision.reasons);
+    case "blocked":
+      throw new Error(decision.reasons[0].code); // e.g. RISK_MAX_LEVERAGE
+  }
+}</code></pre>
+<pre class="code-pane" data-pane="json" hidden><code>{
+  "name": "Conservative trading",
+  "version": 4,
+  "mode": "evaluation",
+  "risk": {
+    "maxTxUsd": 5000,
+    "maxLeverage": 3,
+    "maxSlippageBps": 50,
+    "dailyLimitUsd": 20000,
+    "requireApprovalAboveUsd": 10000
+  },
+  "security": {
+    "allowedPrograms": ["Jupiter", "Orca"],
+    "allowedRecipients": [],
+    "blockedAddresses": [],
+    "blockUnknownRecipients": true,
+    "blockUnlimitedApprovals": true
+  }
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ use cases ============ -->
+  <section class="pp-sec uses" id="use-cases">
+    <div class="wrap">
+      <div class="pp-head">
+        <p class="kicker">Use cases</p>
+        <h2>Built for every kind of financial agent.</h2>
+      </div>
+      <div class="use-grid">
+        <div class="use">
+          <svg viewBox="0 0 160 90" aria-hidden="true"><rect x="58" y="22" width="44" height="34" rx="6"/><path d="M70 39h.01M90 39h.01"/><path d="M80 22v-10M74 12h12"/><path d="M58 39H24M102 39h34"/><rect x="14" y="34" width="10" height="10"/><rect x="136" y="34" width="10" height="10"/><path d="M40 72h80" class="u-dim"/></svg>
+          <h3>Portfolio agents</h3><p>Keep allocation, exposure and drawdown inside the boundaries you set.</p>
+        </div>
+        <div class="use">
+          <svg viewBox="0 0 160 90" aria-hidden="true"><path d="M14 70h132" class="u-dim"/><path d="M18 62l22-14 18 6 22-22 20 10 22-18 20 6"/><path d="M14 22h132" stroke-dasharray="3 4" class="u-lim"/><circle cx="142" cy="30" r="3"/></svg>
+          <h3>Trading agents</h3><p>Limit position size, leverage, slippage and daily spending on every order.</p>
+        </div>
+        <div class="use">
+          <svg viewBox="0 0 160 90" aria-hidden="true"><rect x="40" y="20" width="80" height="52" rx="6"/><path d="M96 38h24v16H96z"/><circle cx="104" cy="46" r="2"/><path d="M52 32h28M52 42h20" class="u-dim"/></svg>
+          <h3>Automated payments</h3><p>Restrict recipients and amounts, and hold large transfers for human approval.</p>
+        </div>
+        <div class="use">
+          <svg viewBox="0 0 160 90" aria-hidden="true"><path d="M80 14l30 17v34L80 82 50 65V31z"/><path d="M80 14v34M50 31l30 17 30-17" class="u-dim"/><circle cx="24" cy="48" r="4"/><circle cx="136" cy="48" r="4"/><path d="M28 48h22M110 48h22" stroke-dasharray="2 3"/></svg>
+          <h3>DeFi agents</h3><p>Allow only the protocols you trust and refuse risky approvals and permission changes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="end">
+  <div class="end-bg" aria-hidden="true"><canvas data-liquid="soft"></canvas></div>
+  <section class="closing pp-final">
+    <div class="wrap">
+      <img class="pp-final-mark" src="/mark.png" alt="" width="40" height="40">
+      <h2>The future of finance needs a stronger security layer.</h2>
+      <p>Establish a new standard for secure autonomous financial execution: configure your policies, connect your agent, secure its execution.</p>
+      
+      <div class="ctas">
+        <a class="btn btn-primary" href="https://app.intercepting.xyz">Open App</a>
+        <a class="btn btn-ghost" href="https://docs.intercepting.xyz">Read Documentation <span class="ne" aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+<!--#footer-->
+</div>
+
+<script src="/gradient.js" defer></script>
+<script src="/site.js" defer></script>
+<script src="/product.js" defer></script>
+</body>
+</html>

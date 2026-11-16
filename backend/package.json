@@ -1,0 +1,26 @@
+{
+  "name": "intercept-app",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@solana/web3.js": "1.98.4",
+    "bs58": "6.0.0",
+    "fastify": "5.3.3",
+    "pg": "8.16.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "@types/pg": "8.15.4",
+    "typescript": "5.8.3",
+    "vitest": "3.2.4"
+  },
+  "overrides": {
+    "rpc-websockets": {
+      "uuid": "11.1.0"
+    }
+  }
+}

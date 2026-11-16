@@ -1,0 +1,1 @@
+{"name":"intercept-privy","private":true,"dependencies":{"@privy-io/react-auth":"^3.51.4","@solana-program/memo":"^0.16.0","@solana-program/system":"^0.16.0","@solana-program/token":"^0.18.0","@solana/kit":"^8.6.0","@vercel/blob":"^2.9.0","esbuild":"^0.28.2","react":"^18.3.1","react-dom":"^18.3.1"}}
