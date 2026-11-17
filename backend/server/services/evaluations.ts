@@ -15,6 +15,9 @@ import { History, decide, firewallChecks, riskChecks, systemChecks } from '../en
 import { alert, emit } from './webhooks';
 import { audit } from './audit';
 import { recordCustomer } from './feed';
+import { evaluateIntel, networkCheck } from '../network/matching';
+import { publicSummary } from '../network/service';
+import { afterEvaluation } from '../network/hooks';
 
 export interface EvaluateInput {
   orgId: string; agentId: string; transaction: string; source: 'api' | 'console'; kind: 'evaluate' | 'execution_request';
@@ -55,9 +58,11 @@ export async function evaluate(db: Db, input: EvaluateInput) {
   const network = agent.network as Network;
   const ctx = await buildContext(vtx, { conn: connection(network), network, wallet: agent.wallet, runSimulation: true });
   const h = await agentHistory(db, agent.id, ctx.decoded.programs);
+  const intel = await evaluateIntel(db, network, ctx, policy, publicSummary);
   const checks = [
     ...systemChecks({ status: agent.status, mode: agent.integration_mode, walletVerified: !!agent.wallet_verified_at, orgEmergencyStop: agent.emergency_stop }),
     ...firewallChecks(ctx, policy),
+    networkCheck(intel, policy),
     ...riskChecks(ctx, policy, h),
   ];
   const { decision, reasons } = decide(checks);
@@ -70,12 +75,12 @@ export async function evaluate(db: Db, input: EvaluateInput) {
 
   const result = await tx(async (c) => {
     await c.query(`INSERT INTO evaluations(id, org_id, agent_id, api_key_id, source, kind, network, policy_id, policy_version, message_hash, decision, reasons,
-        risk_checks, firewall_checks, decoded, simulation, value_usd, value_certain, client_reference, approval_status, approval_expires_at, latency_ms)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
+        risk_checks, firewall_checks, decoded, simulation, value_usd, value_certain, client_reference, approval_status, approval_expires_at, latency_ms, intelligence)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)`,
       [id, input.orgId, agent.id, input.apiKeyId, input.source, input.kind, network, agent.policy_id, agent.policy_version, ctx.decoded.messageHash, decision,
         JSON.stringify(reasons), JSON.stringify(checks.filter((x) => x.category === 'RISK')), JSON.stringify(checks.filter((x) => x.category !== 'RISK')),
         JSON.stringify(decoded), sim ? JSON.stringify(sim) : null, ctx.valueUsd === null ? null : decStr(ctx.valueUsd), ctx.valueUsd !== null && ctx.flowSource === 'simulation',
-        input.reference ?? null, decision === 'REQUIRE_APPROVAL' ? 'PENDING' : null, approvalExpires, latency]);
+        input.reference ?? null, decision === 'REQUIRE_APPROVAL' ? 'PENDING' : null, approvalExpires, latency, JSON.stringify(intel)]);
     await c.query('UPDATE agents SET last_activity_at = now() WHERE id = $1', [agent.id]);
     const deliveries: string[] = [];
     if (decision === 'DENY') {
@@ -91,6 +96,7 @@ export async function evaluate(db: Db, input: EvaluateInput) {
     if (input.kind === 'execution_request' && decision === 'ALLOW') authorization = await issueAuthorization(c, { orgId: input.orgId, agentId: agent.id, evaluationId: id, messageHash: ctx.decoded.messageHash, network, ttl: policy.execution.authorizationTtlSecs });
     return { deliveries, authorization };
   });
+  await afterEvaluation(db, { orgId: input.orgId, agent, evaluationId: id, network, decision, checks, intel, ctx }).catch(() => undefined);
   await recordCustomer(db, input.orgId, { decision, reasons, valueUsd: ctx.valueUsd === null ? null : decStr(ctx.valueUsd, 2), network, programs: ctx.decoded.programs, instructions: ctx.allInstructions, simStatus: ctx.simulation?.status ?? null, latencyMs: latency }).catch(() => undefined);
   return { id, result, row: await getEvaluation(db, input.orgId, id) };
 }
@@ -137,7 +143,7 @@ export function evaluationView(e: any, auth: any = null) {
     messageHash: e.message_hash, reference: e.client_reference,
     approval: e.decision === 'REQUIRE_APPROVAL' ? { status: approval, expiresAt: e.approval_expires_at, resolvedBy: e.resolved_by, resolvedAt: e.resolved_at } : null,
     authorization: auth ? { id: auth.id, expiresAt: auth.expires_at, consumedAt: auth.consumed_at, signature: auth.signature } : null,
-    checks: { risk: e.risk_checks, security: e.firewall_checks }, decoded: e.decoded, simulation: e.simulation, latencyMs: e.latency_ms,
+    checks: { risk: e.risk_checks, security: e.firewall_checks }, decoded: e.decoded, simulation: e.simulation, latencyMs: e.latency_ms, intelligence: e.intelligence ?? null,
   };
 }
 

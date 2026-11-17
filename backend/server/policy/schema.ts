@@ -60,6 +60,14 @@ export const policyConfigSchema = z.object({
     approvalTtlSecs: z.number().int().min(60).max(7 * 86_400).default(3_600),
     authorizationTtlSecs: z.number().int().min(10).max(600).default(120),
   }).strict().default({}),
+  /** Intercept Network: what a match against shared threat intelligence does. The engine decides; intelligence only informs. */
+  network: z.object({
+    verified: z.enum(['BLOCK', 'REQUIRE_APPROVAL', 'WARN', 'ALLOW']).default('BLOCK'),
+    suspected: z.enum(['BLOCK', 'REQUIRE_APPROVAL', 'WARN', 'ALLOW']).default('WARN'),
+    unavailable: z.enum(['BLOCK', 'REQUIRE_APPROVAL', 'WARN']).default('WARN'),
+    minConfidence: z.number().int().min(0).max(100).default(50),
+    minSeverity: z.enum(['INFORMATIONAL', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).default('MEDIUM'),
+  }).strict().default({}),
 }).strict();
 
 export type PolicyConfig = z.infer<typeof policyConfigSchema>;

@@ -8,6 +8,7 @@ import { drainDue } from '../services/webhooks';
 import { agentRoutes } from './agent-routes';
 import { consoleRoutes } from './console-routes';
 import { playgroundRoutes } from './playground-routes';
+import { networkRoutes } from './network-routes';
 import { OPENAPI } from './openapi';
 
 export interface AppOptions { verifier?: IdentityVerifier; logger?: boolean }
@@ -64,6 +65,7 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
   consoleRoutes(app, opts.verifier ?? privyVerifier);
   agentRoutes(app);
   playgroundRoutes(app);
+  networkRoutes(app);
   await app.ready();
   return app;
 }

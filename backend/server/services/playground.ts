@@ -22,6 +22,8 @@ import { buildContext } from '../engine/context';
 import { History, decide, firewallChecks, riskChecks, systemChecks } from '../engine/checks';
 import { getPrices } from '../market/prices';
 import { agentHistory, decodedView, simulationView } from './evaluations';
+import { evaluateIntel, networkCheck } from '../network/matching';
+import { publicSummary } from '../network/service';
 
 // ------------------------------------------------------------------------------ sandbox marker
 
@@ -96,7 +98,9 @@ export async function sandboxEvaluate(db: Db, i: SandboxInput) {
   const state = agent
     ? { status: agent.status, mode: agent.integration_mode, walletVerified: !!agent.wallet_verified_at, orgEmergencyStop: agent.emergency_stop }
     : { status: 'ACTIVE' as const, mode: 'EVALUATION' as const, walletVerified: false, orgEmergencyStop: false };
-  const checks = [...systemChecks(state), ...firewallChecks(ctx, policy), ...riskChecks(ctx, policy, h)];
+  // shared intelligence is read, never written: no match record, no observation, no alert
+  const intel = await evaluateIntel(db, net, ctx, policy, publicSummary);
+  const checks = [...systemChecks(state), ...firewallChecks(ctx, policy), networkCheck(intel, policy), ...riskChecks(ctx, policy, h)];
   const { decision, reasons } = decide(checks);
   return {
     id: newId('pg'), object: 'evaluation', sandbox: true, notice: NOTICE,
@@ -108,7 +112,7 @@ export async function sandboxEvaluate(db: Db, i: SandboxInput) {
     valueUsd: ctx.valueUsd === null ? null : decStr(ctx.valueUsd, 2), valueCertain: ctx.valueUsd !== null && ctx.flowSource === 'simulation',
     messageHash: ctx.decoded.messageHash, approval: null, authorization: null,
     checks: { risk: checks.filter((x) => x.category === 'RISK'), security: checks.filter((x) => x.category !== 'RISK') },
-    decoded: decodedView(ctx), simulation: simulationView(ctx, net), latencyMs: Date.now() - t0,
+    decoded: decodedView(ctx), simulation: simulationView(ctx, net), intelligence: intel, latencyMs: Date.now() - t0,
   };
 }
 

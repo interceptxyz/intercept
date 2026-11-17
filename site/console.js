@@ -491,6 +491,7 @@
   async function policyEditor(el, id) {
     const [p, def] = await Promise.all([id ? get('/policies/' + id) : null, api('GET', '/policy-schema/default')]);
     const cfg = JSON.parse(JSON.stringify(p ? p.versions[0].config : def));
+    cfg.network = { ...(def.network || {}), ...(cfg.network || {}) }; // versions saved before Intercept Network
     crumb(['policies', p ? p.name : 'New policy']);
     const ro = admin() ? '' : ' disabled';
     const fld = ([sec, k, label, unit, kind, hint]) => `<label class="fld"><span>${label} <small>${unit}</small></span><input data-sec="${sec}" data-k="${k}" data-kind="${kind}" value="${cfg[sec][k] == null ? '' : esc(cfg[sec][k])}" placeholder="no limit" inputmode="decimal"${ro}><small>${hint}</small></label>`;
@@ -511,6 +512,12 @@
           <label class="fld"><span>Unsupported checks</span><select data-sel="execution.unsupportedChecks"${ro}>${['REQUIRE_APPROVAL', 'DENY', 'WARN'].map(v => `<option${cfg.execution.unsupportedChecks === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
           <label class="fld"><span>Approval window <small>seconds</small></span><input data-sec="execution" data-k="approvalTtlSecs" data-kind="int" value="${cfg.execution.approvalTtlSecs}"${ro}></label>
           <label class="fld"><span>Authorization lifetime <small>seconds</small></span><input data-sec="execution" data-k="authorizationTtlSecs" data-kind="int" value="${cfg.execution.authorizationTtlSecs}"${ro}></label>
+          <h3 class="sub full">Intercept Network <small>shared threat intelligence; it informs, this policy decides</small></h3>
+          <label class="fld"><span>Verified threat match</span><select data-sel="network.verified"${ro}>${['BLOCK', 'REQUIRE_APPROVAL', 'WARN', 'ALLOW'].map(v => `<option${cfg.network.verified === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+          <label class="fld"><span>Suspected threat match</span><select data-sel="network.suspected"${ro}>${['BLOCK', 'REQUIRE_APPROVAL', 'WARN', 'ALLOW'].map(v => `<option${cfg.network.suspected === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+          <label class="fld"><span>Intelligence unavailable</span><select data-sel="network.unavailable"${ro}>${['WARN', 'REQUIRE_APPROVAL', 'BLOCK'].map(v => `<option${cfg.network.unavailable === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+          <label class="fld"><span>Minimum severity to act</span><select data-sel="network.minSeverity"${ro}>${['INFORMATIONAL', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map(v => `<option${cfg.network.minSeverity === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+          <label class="fld"><span>Minimum confidence to act <small>0-100</small></span><input data-sec="network" data-k="minConfidence" data-kind="int" value="${cfg.network.minConfidence}"${ro}><small>Below these thresholds a match can only warn.</small></label>
           <p class="err full" id="perr"></p>
         </div></div>
         <div>
@@ -521,7 +528,7 @@
     const read = () => {
       el.querySelectorAll('[data-k]').forEach(i => {
         const v = i.value.trim();
-        cfg[i.dataset.sec][i.dataset.k] = v === '' ? (i.dataset.sec === 'execution' && i.dataset.k.endsWith('Secs') ? def.execution[i.dataset.k] : null) : (i.dataset.kind === 'int' ? Number(v) : v);
+        cfg[i.dataset.sec][i.dataset.k] = v === '' ? (i.dataset.sec === 'network' ? def.network[i.dataset.k] : i.dataset.sec === 'execution' && i.dataset.k.endsWith('Secs') ? def.execution[i.dataset.k] : null) : (i.dataset.kind === 'int' ? Number(v) : v);
       });
       el.querySelectorAll('[data-list]').forEach(i => { cfg.security[i.dataset.list] = i.value.split(/[\s,]+/).map(s => s.trim()).filter(Boolean); });
       el.querySelectorAll('[data-bool]').forEach(i => { const [a, b] = i.dataset.bool.split('.'); cfg[a][b] = i.checked; });
@@ -586,7 +593,7 @@
   };
 
   /* ---------------- api keys ---------------- */
-  const SCOPES = [['transactions:evaluate', 'Evaluate transactions'], ['transactions:read', 'Read its evaluations'], ['execution:request', 'Request execution authorizations'], ['agent:read', 'Read its agent and policy']];
+  const SCOPES = [['transactions:evaluate', 'Evaluate transactions'], ['transactions:read', 'Read its evaluations'], ['execution:request', 'Request execution authorizations'], ['agent:read', 'Read its agent and policy'], ['network:read', 'Look up Intercept Network intelligence'], ['network:report', 'Report threats to Intercept Network']];
   VIEWS.keys = async el => {
     crumb(['keys']);
     const [K, agents] = await Promise.all([get('/keys'), get('/agents')]);
@@ -608,7 +615,7 @@
       modal('Create API key', `<form class="form" id="kf">
         <label class="fld full"><span>Agent</span><select name="agentId">${usable.map(a => `<option value="${a.id}">${esc(a.name)} · ${a.network === 'mainnet-beta' ? 'live' : 'test'}</option>`).join('')}</select></label>
         <label class="fld full"><span>Name</span><input name="name" maxlength="64" placeholder="production" required></label>
-        <div class="fld full"><span>Scopes</span>${SCOPES.map(([s, t], i) => `<label class="chk2"><input type="checkbox" name="scope" value="${s}"${i !== 2 ? ' checked' : ''}>${t} <span class="code-tag">${s}</span></label>`).join('')}</div>
+        <div class="fld full"><span>Scopes</span>${SCOPES.map(([s, t], i) => `<label class="chk2"><input type="checkbox" name="scope" value="${s}"${i < 2 || i === 3 ? ' checked' : ''}>${t} <span class="code-tag">${s}</span></label>`).join('')}</div>
         <label class="fld"><span>Rate limit <small>requests / minute</small></span><input name="rate" type="number" min="1" max="600" value="60"></label>
         <label class="fld"><span>Expires <small>optional</small></span><input name="exp" type="date"></label>
         <p class="err full" id="kerr"></p>
@@ -638,7 +645,7 @@
   };
 
   /* ---------------- webhooks ---------------- */
-  const EVENTS = ['evaluation.denied', 'evaluation.approval_required', 'evaluation.resolved', 'alert.created', 'agent.status_changed', 'api_key.revoked', 'organization.emergency_stop'];
+  const EVENTS = ['evaluation.denied', 'evaluation.approval_required', 'evaluation.resolved', 'alert.created', 'agent.status_changed', 'api_key.revoked', 'organization.emergency_stop', 'threat.verified', 'threat.updated', 'threat.reported', 'threat.disputed', 'threat.revoked', 'threat.expired', 'threat.false_positive', 'threat.match.detected'];
   VIEWS.webhooks = async el => {
     crumb(['webhooks']);
     if (!admin()) { el.innerHTML = '<div class="ph"><div><h1>Webhooks</h1></div></div><div class="card"><div class="empty">Webhooks are managed by owners and administrators.</div></div>'; return; }

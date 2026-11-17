@@ -8,7 +8,8 @@ import { isIP } from 'net';
 import { Db, one, q } from '../db';
 import { bad, hmac, newId, secret } from '../lib/util';
 
-export const WEBHOOK_EVENTS = ['evaluation.denied', 'evaluation.approval_required', 'evaluation.resolved', 'alert.created', 'agent.status_changed', 'api_key.revoked', 'organization.emergency_stop'] as const;
+export const WEBHOOK_EVENTS = ['evaluation.denied', 'evaluation.approval_required', 'evaluation.resolved', 'alert.created', 'agent.status_changed', 'api_key.revoked', 'organization.emergency_stop',
+  'threat.reported', 'threat.verified', 'threat.updated', 'threat.disputed', 'threat.revoked', 'threat.expired', 'threat.false_positive', 'threat.match.detected'] as const;
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 const MAX_ATTEMPTS = 6;
 

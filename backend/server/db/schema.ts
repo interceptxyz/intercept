@@ -331,4 +331,165 @@ CREATE TABLE playground_requests (
 CREATE INDEX playground_user ON playground_requests(org_id, user_id, created_at DESC);
 `,
   },
+  {
+    id: '005_network',
+    sql: `
+-- Intercept Network: shared threat intelligence. Customer telemetry (observations) is kept apart
+-- from the shared registry (indicators, shareable evidence, published events).
+CREATE OR REPLACE FUNCTION icpt_forbid_change() RETURNS trigger AS $$
+BEGIN RAISE EXCEPTION 'append-only table %', TG_TABLE_NAME; END $$ LANGUAGE plpgsql;
+
+CREATE TABLE network_settings (
+  org_id        TEXT PRIMARY KEY REFERENCES organizations(id) ON DELETE CASCADE,
+  sharing_mode  TEXT NOT NULL DEFAULT 'PRIVATE' CHECK (sharing_mode IN ('PRIVATE','ANONYMIZED_INTELLIGENCE','AUTHORIZED_CONTRIBUTION')),
+  sub_enabled   BOOLEAN NOT NULL DEFAULT true,
+  min_confidence INT NOT NULL DEFAULT 50 CHECK (min_confidence BETWEEN 0 AND 100),
+  min_severity  TEXT NOT NULL DEFAULT 'MEDIUM',
+  categories    TEXT[] NOT NULL DEFAULT '{}',          -- empty = every category
+  delivery      TEXT NOT NULL DEFAULT 'webhook' CHECK (delivery IN ('webhook','none')),
+  reliability   INT NOT NULL DEFAULT 50 CHECK (reliability BETWEEN 0 AND 100),  -- source reliability, moved by review outcomes
+  updated_by    TEXT,
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE network_reviewers (
+  user_id    TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  role       TEXT NOT NULL CHECK (role IN ('REVIEWER','LEAD')),
+  granted_by TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE threat_indicators (
+  id              TEXT PRIMARY KEY,
+  chain           TEXT NOT NULL,                       -- 'mainnet-beta' | 'devnet' | 'eip155:4663'
+  testnet         BOOLEAN NOT NULL,
+  indicator_type  TEXT NOT NULL,
+  value           TEXT NOT NULL,                       -- normalized
+  category        TEXT NOT NULL,
+  severity        TEXT NOT NULL,
+  confidence      INT NOT NULL DEFAULT 0 CHECK (confidence BETWEEN 0 AND 100),
+  confidence_explanation JSONB NOT NULL DEFAULT '[]',
+  scoring_version TEXT NOT NULL,
+  status          TEXT NOT NULL CHECK (status IN ('REPORTED','UNDER_REVIEW','SUSPECTED','VERIFIED','DISPUTED','REVOKED','EXPIRED','FALSE_POSITIVE')),
+  first_seen_at   TIMESTAMPTZ NOT NULL,
+  last_seen_at    TIMESTAMPTZ NOT NULL,
+  verified_at     TIMESTAMPTZ,
+  expires_at      TIMESTAMPTZ,
+  observation_count INT NOT NULL DEFAULT 0,
+  independent_source_count INT NOT NULL DEFAULT 0,
+  public_summary  TEXT NOT NULL DEFAULT '',
+  intelligence_version BIGINT NOT NULL DEFAULT 0,      -- sequence of the last published event
+  revision        INT NOT NULL DEFAULT 1,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (chain, indicator_type, value)
+);
+CREATE INDEX threat_ind_lookup ON threat_indicators(chain, value) WHERE status IN ('SUSPECTED','VERIFIED','DISPUTED');
+CREATE INDEX threat_ind_status ON threat_indicators(status, updated_at DESC);
+
+CREATE TABLE threat_observations (
+  id              TEXT PRIMARY KEY,
+  org_id          TEXT REFERENCES organizations(id) ON DELETE CASCADE,   -- null: public, external or reviewer source
+  agent_id        TEXT,
+  reporter_user_id TEXT,
+  reporter_key_id TEXT,
+  source_type     TEXT NOT NULL CHECK (source_type IN ('FIREWALL','SIMULATION','AGENT_MONITORING','USER_REPORT','EXTERNAL','ADMIN','ONCHAIN')),
+  source_reference TEXT,
+  chain           TEXT NOT NULL,
+  tx_hash         TEXT,
+  subject_type    TEXT NOT NULL,
+  subject_value   TEXT NOT NULL,
+  category        TEXT NOT NULL,
+  evidence        JSONB NOT NULL,                      -- internal: never returned by the shared registry
+  description     TEXT,                                -- reporter text: internal only
+  correlation_key TEXT NOT NULL,                       -- underlying incident / source cluster
+  observed_at     TIMESTAMPTZ NOT NULL,
+  dedup_key       TEXT NOT NULL UNIQUE,
+  processing_status TEXT NOT NULL CHECK (processing_status IN ('PENDING','ACCEPTED','PRIVATE','DUPLICATE','REJECTED')),
+  rejection_reason TEXT,
+  visibility      TEXT NOT NULL CHECK (visibility IN ('PRIVATE','ANONYMIZED','AUTHORIZED','PUBLIC')),
+  indicator_id    TEXT REFERENCES threat_indicators(id),
+  correlation_id  TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX threat_obs_org ON threat_observations(org_id, created_at DESC);
+CREATE INDEX threat_obs_indicator ON threat_observations(indicator_id);
+
+CREATE TABLE threat_evidence (
+  id              TEXT PRIMARY KEY,
+  indicator_id    TEXT NOT NULL REFERENCES threat_indicators(id),
+  observation_id  TEXT REFERENCES threat_observations(id) ON DELETE CASCADE,
+  evidence_type   TEXT NOT NULL,
+  evidence_reference TEXT,
+  evidence_hash   TEXT NOT NULL,
+  summary         TEXT NOT NULL,                       -- generated, sanitized
+  source_reliability INT NOT NULL,
+  verification_status TEXT NOT NULL CHECK (verification_status IN ('UNVERIFIED','VERIFIED_ONCHAIN','REJECTED')),
+  visibility      TEXT NOT NULL CHECK (visibility IN ('INTERNAL','SHAREABLE')),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX threat_evidence_ind ON threat_evidence(indicator_id);
+
+CREATE TABLE threat_reviews (
+  id            TEXT PRIMARY KEY,
+  indicator_id  TEXT NOT NULL REFERENCES threat_indicators(id),
+  reviewer_id   TEXT,                                   -- null = system transition
+  review_type   TEXT NOT NULL,
+  previous_status TEXT NOT NULL,
+  new_status    TEXT NOT NULL,
+  reason        TEXT NOT NULL,
+  evidence_refs JSONB NOT NULL DEFAULT '[]',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX threat_reviews_ind ON threat_reviews(indicator_id, created_at);
+CREATE TRIGGER threat_reviews_immutable BEFORE UPDATE OR DELETE ON threat_reviews FOR EACH ROW EXECUTE FUNCTION icpt_forbid_change();
+
+-- transactional outbox: written in the same transaction as the change; sequence = intelligence version
+CREATE TABLE intelligence_events (
+  sequence_number BIGSERIAL PRIMARY KEY,
+  id            TEXT NOT NULL UNIQUE,
+  event_type    TEXT NOT NULL,
+  indicator_id  TEXT NOT NULL REFERENCES threat_indicators(id),
+  chain         TEXT NOT NULL,
+  payload       JSONB NOT NULL,                         -- sanitized
+  published_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TRIGGER intelligence_events_immutable BEFORE UPDATE OR DELETE ON intelligence_events FOR EACH ROW EXECUTE FUNCTION icpt_forbid_change();
+CREATE TABLE intelligence_dispatch (
+  sequence_number BIGINT PRIMARY KEY REFERENCES intelligence_events(sequence_number),
+  dispatched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deliveries    INT NOT NULL
+);
+
+CREATE TABLE threat_matches (
+  id            TEXT PRIMARY KEY,
+  indicator_id  TEXT NOT NULL REFERENCES threat_indicators(id),
+  evaluation_id TEXT NOT NULL,
+  org_id        TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  agent_id      TEXT NOT NULL,
+  matched_field TEXT NOT NULL,
+  match_type    TEXT NOT NULL,
+  status_at_evaluation TEXT NOT NULL,
+  confidence_at_evaluation INT NOT NULL,
+  severity_at_evaluation TEXT NOT NULL,
+  policy_action TEXT NOT NULL,
+  resulting_decision TEXT NOT NULL,
+  intelligence_version BIGINT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX threat_matches_org ON threat_matches(org_id, created_at DESC);
+CREATE INDEX threat_matches_ind ON threat_matches(indicator_id);
+
+CREATE TABLE network_provider_cache (
+  provider   TEXT NOT NULL,
+  chain      TEXT NOT NULL,
+  value      TEXT NOT NULL,
+  result     JSONB NOT NULL,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (provider, chain, value)
+);
+
+ALTER TABLE evaluations ADD COLUMN intelligence JSONB;
+`,
+  },
 ];

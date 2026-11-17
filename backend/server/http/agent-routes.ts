@@ -12,6 +12,7 @@ import { waitUntil } from '@vercel/functions';
 import { feed, refreshScan, stats } from '../services/feed';
 import { tick } from '../services/watch';
 import { isPlayground, sandboxEvaluate } from '../services/playground';
+import { networkTick } from '../network/service';
 
 const txBody = z.object({ transaction: z.string().min(80).max(2000), reference: z.string().max(100).optional() });
 
@@ -19,7 +20,7 @@ export function agentRoutes(app: FastifyInstance) {
   const db = getPool();
 
   // ---------------------------------------------------------------- public live feed (no auth)
-  const kick = () => { const p = Promise.all([refreshScan(db).catch(() => 0), tick(db).catch(() => null)]); try { waitUntil(p); } catch { /* not on Vercel */ } };
+  const kick = () => { const p = Promise.all([refreshScan(db).catch(() => 0), tick(db).catch(() => null), networkTick(db).catch(() => null)]); try { waitUntil(p); } catch { /* not on Vercel */ } };
   app.get('/v1/public/feed', async (req, reply) => {
     kick();
     const qs = req.query as any;

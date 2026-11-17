@@ -13,6 +13,7 @@ import { audit } from '../services/audit';
 import { evaluate, evaluationView, getEvaluation, resolveApproval } from '../services/evaluations';
 import { addWallet, refreshWallet, rulesSchema, tick, walletView } from '../services/watch';
 import { waitUntil } from '@vercel/functions';
+import { networkTick } from '../network/service';
 import { body, cookie, ip, member, setSessionCookie, user } from './context';
 
 const name = z.string().trim().min(1).max(64);
@@ -465,7 +466,8 @@ export function consoleRoutes(app: FastifyInstance, verifier: IdentityVerifier) 
   app.post('/v1/internal/tick', async (req) => {
     const secret = process.env.CRON_SECRET;
     if (!secret || req.headers.authorization !== `Bearer ${secret}`) throw new HttpError(401, 'UNAUTHENTICATED', 'Invalid cron secret.');
-    return tick(db, 25_000, 5_000);
+    const [watch, network] = await Promise.all([tick(db, 25_000, 5_000), networkTick(db).catch((e) => ({ error: String(e.message ?? e) }))]);
+    return { ...watch, network };
   });
 
   // ------------------------------------------------------------------ alerts, webhooks, audit, metrics

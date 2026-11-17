@@ -8,7 +8,7 @@ import { Db, one, q } from '../db';
 import { config } from '../lib/config';
 import { HttpError, bad, hmac, notFound, safeEqualHex, unauthorized } from '../lib/util';
 
-export const KEY_SCOPES = ['transactions:evaluate', 'transactions:read', 'execution:request', 'agent:read'] as const;
+export const KEY_SCOPES = ['transactions:evaluate', 'transactions:read', 'execution:request', 'agent:read', 'network:read', 'network:report'] as const;
 export type KeyScope = (typeof KEY_SCOPES)[number];
 
 const B62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
