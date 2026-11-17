@@ -261,4 +261,49 @@ CREATE UNIQUE INDEX public_feed_sig ON public_feed(signature) WHERE signature IS
 CREATE TABLE kv_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now());
 `,
   },
+  {
+    id: '003_wallet_watch',
+    sql: `
+CREATE TABLE watched_wallets (
+  id            TEXT PRIMARY KEY,
+  org_id        TEXT NOT NULL REFERENCES organizations(id),
+  address       TEXT NOT NULL,
+  label         TEXT NOT NULL,
+  network       TEXT NOT NULL CHECK (network IN ('devnet','mainnet-beta')),
+  policy_id     TEXT REFERENCES policies(id),       -- null = Intercept reference policy
+  rules         JSONB NOT NULL,                     -- alert rules, see services/watch.ts
+  paused        BOOLEAN NOT NULL DEFAULT false,
+  last_signature TEXT,
+  last_checked_at TIMESTAMPTZ,
+  last_activity_at TIMESTAMPTZ,
+  last_error    TEXT,
+  created_by    TEXT NOT NULL REFERENCES users(id),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (org_id, address, network)
+);
+CREATE INDEX watched_due ON watched_wallets(last_checked_at NULLS FIRST) WHERE paused = false;
+
+CREATE TABLE watch_events (
+  id          TEXT PRIMARY KEY,
+  org_id      TEXT NOT NULL REFERENCES organizations(id),
+  wallet_id   TEXT NOT NULL REFERENCES watched_wallets(id) ON DELETE CASCADE,
+  signature   TEXT NOT NULL,
+  slot        BIGINT,
+  block_time  TIMESTAMPTZ,
+  direction   TEXT NOT NULL CHECK (direction IN ('OUTGOING','INCOMING','INTERNAL')),
+  decision    TEXT,                                 -- policy decision for transactions the wallet signs
+  reasons     TEXT[] NOT NULL DEFAULT '{}',
+  value_out_usd NUMERIC(38,2),
+  value_in_usd  NUMERIC(38,2),
+  summary     JSONB NOT NULL,                       -- kinds, programs, flows
+  alerted     BOOLEAN NOT NULL DEFAULT false,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (wallet_id, signature)
+);
+CREATE INDEX watch_events_wallet ON watch_events(wallet_id, created_at DESC);
+
+ALTER TABLE alerts ADD COLUMN watched_wallet_id TEXT;
+ALTER TABLE alerts ADD COLUMN signature TEXT;
+`,
+  },
 ];

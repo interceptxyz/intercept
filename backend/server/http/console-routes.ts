@@ -11,6 +11,8 @@ import { KEY_SCOPES, createKey, keyView } from '../services/keys';
 import { WEBHOOK_EVENTS, attempt, createWebhook, emit } from '../services/webhooks';
 import { audit } from '../services/audit';
 import { evaluate, evaluationView, getEvaluation, resolveApproval } from '../services/evaluations';
+import { addWallet, refreshWallet, rulesSchema, tick, walletView } from '../services/watch';
+import { waitUntil } from '@vercel/functions';
 import { body, cookie, ip, member, setSessionCookie, user } from './context';
 
 const name = z.string().trim().min(1).max(64);
@@ -407,6 +409,64 @@ export function consoleRoutes(app: FastifyInstance, verifier: IdentityVerifier) 
       return { status: r.status, authorizationIssued: !!r.authorization };
     });
   }
+
+  // ------------------------------------------------------------------ wallet watchlist
+  const kickWatch = () => { const p = tick(db).catch(() => ({ wallets: 0, events: 0 })); try { waitUntil(p); } catch { /* not on Vercel */ } };
+  app.get('/v1/orgs/:orgId/wallets', async (req) => {
+    const m = await member(req);
+    kickWatch();
+    const rows = await q(db, `SELECT w.*,
+        (SELECT count(*)::int FROM watch_events e WHERE e.wallet_id = w.id AND e.created_at > now() - interval '24 hours') events_24h,
+        (SELECT count(*)::int FROM alerts a WHERE a.watched_wallet_id = w.id AND a.created_at > now() - interval '24 hours') alerts_24h
+      FROM watched_wallets w WHERE w.org_id = $1 ORDER BY w.created_at`, [m.orgId]);
+    return rows.map(walletView);
+  });
+  app.post('/v1/orgs/:orgId/wallets', async (req, reply) => {
+    const m = await member(req, 'ADMIN');
+    const b = body(req, z.object({ address: z.string().trim(), label: z.string().trim().min(1).max(64), network: z.enum(['devnet', 'mainnet-beta']).default('mainnet-beta'), policyId: z.string().nullable().default(null), rules: z.unknown().optional() }));
+    const w = await addWallet(db, m.orgId, m.user.id, b as any);
+    await audit(db, { orgId: m.orgId, actorType: 'user', actorId: m.user.id, action: 'wallet.watch', targetType: 'wallet', targetId: w.id, detail: { address: b.address, network: b.network }, ip: ip(req) });
+    await refreshWallet(db, w); // first read: recent history, no alerts
+    return reply.status(201).send(walletView(await one(db, 'SELECT * FROM watched_wallets WHERE id = $1', [w.id])));
+  });
+  app.patch('/v1/orgs/:orgId/wallets/:id', async (req) => {
+    const m = await member(req, 'ADMIN');
+    const b = body(req, z.object({ label: z.string().trim().min(1).max(64).optional(), paused: z.boolean().optional(), policyId: z.string().nullable().optional(), rules: rulesSchema.optional() }));
+    const w = await one(db, 'SELECT * FROM watched_wallets WHERE id = $1 AND org_id = $2', [(req.params as any).id, m.orgId]);
+    if (!w) throw notFound('Wallet');
+    if (b.policyId && !(await one(db, 'SELECT 1 FROM policies WHERE id = $1 AND org_id = $2', [b.policyId, m.orgId]))) throw notFound('Policy');
+    const row = await one(db, `UPDATE watched_wallets SET label = $3, paused = $4, policy_id = $5, rules = $6 WHERE id = $1 AND org_id = $2 RETURNING *`,
+      [w.id, m.orgId, b.label ?? w.label, b.paused ?? w.paused, b.policyId !== undefined ? b.policyId : w.policy_id, JSON.stringify(b.rules ?? w.rules)]);
+    await audit(db, { orgId: m.orgId, actorType: 'user', actorId: m.user.id, action: 'wallet.update', targetType: 'wallet', targetId: w.id, detail: b, ip: ip(req) });
+    return walletView(row);
+  });
+  app.delete('/v1/orgs/:orgId/wallets/:id', async (req) => {
+    const m = await member(req, 'ADMIN');
+    const r = await q(db, 'DELETE FROM watched_wallets WHERE id = $1 AND org_id = $2 RETURNING id', [(req.params as any).id, m.orgId]);
+    if (!r.length) throw notFound('Wallet');
+    await audit(db, { orgId: m.orgId, actorType: 'user', actorId: m.user.id, action: 'wallet.unwatch', targetType: 'wallet', targetId: r[0].id, ip: ip(req) });
+    return { ok: true };
+  });
+  app.get('/v1/orgs/:orgId/wallets/:id/events', async (req) => {
+    const m = await member(req);
+    const w = await one(db, 'SELECT id FROM watched_wallets WHERE id = $1 AND org_id = $2', [(req.params as any).id, m.orgId]);
+    if (!w) throw notFound('Wallet');
+    return q(db, `SELECT id, signature, slot, block_time, direction, decision, reasons, value_out_usd, value_in_usd, summary, alerted, created_at FROM watch_events WHERE wallet_id = $1 AND org_id = $2 ORDER BY COALESCE(block_time, created_at) DESC LIMIT 200`, [w.id, m.orgId]);
+  });
+  app.post('/v1/orgs/:orgId/wallets/:id/refresh', async (req) => {
+    const m = await member(req, 'ADMIN');
+    const w = await one(db, 'SELECT * FROM watched_wallets WHERE id = $1 AND org_id = $2', [(req.params as any).id, m.orgId]);
+    if (!w) throw notFound('Wallet');
+    const n = await refreshWallet(db, w);
+    const after = await one(db, 'SELECT * FROM watched_wallets WHERE id = $1', [w.id]);
+    return { newEvents: n, wallet: walletView(after) };
+  });
+  // cron entry point (e.g. cron-job.org every minute): Authorization: Bearer $CRON_SECRET
+  app.post('/v1/internal/tick', async (req) => {
+    const secret = process.env.CRON_SECRET;
+    if (!secret || req.headers.authorization !== `Bearer ${secret}`) throw new HttpError(401, 'UNAUTHENTICATED', 'Invalid cron secret.');
+    return tick(db, 25_000, 5_000);
+  });
 
   // ------------------------------------------------------------------ alerts, webhooks, audit, metrics
   app.get('/v1/orgs/:orgId/alerts', async (req) => {

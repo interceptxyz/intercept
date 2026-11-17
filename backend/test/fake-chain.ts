@@ -32,6 +32,8 @@ export class FakeChain {
   simError: unknown = null;
   failRpc: string | null = null;    // method name that throws
   inner: any[] = [];
+  sigs = new Map<string, { signature: string; slot: number; err: null }[]>(); // address -> newest first
+  txs = new Map<string, any>();
 
   setAccount(addr: string, a: FakeAccount) { this.pre.set(addr, a); }
   setPost(addr: string, a: FakeAccount | null) { this.post.set(addr, a); }
@@ -58,6 +60,12 @@ export class FakeChain {
       getBalance: async (k: PublicKey) => { this.guard('getBalance'); return this.pre.get(k.toBase58())?.lamports ?? 0; },
       getMultipleAccountsInfo: async (ks: PublicKey[]) => { this.guard('getMultipleAccountsInfo'); return ks.map((k) => this.info(this.pre.get(k.toBase58()))); },
       getSlot: async () => { this.guard('getSlot'); return this.slot; },
+      getSignaturesForAddress: async (k: PublicKey, o: any = {}) => {
+        const all = this.sigs.get(k.toBase58()) ?? [];
+        const stop = o.until ? all.findIndex((x) => x.signature === o.until) : -1;
+        return (stop >= 0 ? all.slice(0, stop) : all).slice(0, o.limit ?? 1000);
+      },
+      getTransaction: async (sig: string) => this.txs.get(sig) ?? null,
       simulateTransaction: async (_tx: VersionedTransaction, cfg: any) => {
         this.guard('simulateTransaction');
         const accounts = (cfg.accounts?.addresses ?? []).map((a: string) => {

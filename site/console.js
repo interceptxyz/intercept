@@ -30,6 +30,7 @@
     grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
     list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/>',
     check: '<path d="M12 3 4.5 6v5.5c0 4.5 3.2 8 7.5 9.5 4.3-1.5 7.5-5 7.5-9.5V6L12 3Z"/><path d="m9 12 2 2 4-4"/>',
+    eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
     bell: '<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
     bot: '<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 8V4.5M9.5 4.5h5M9 13h.01M15 13h.01"/>',
     sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
@@ -44,7 +45,7 @@
   const ic = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${I[n] || ''}</svg>`;
   const NAV = [
     { items: [{ id: 'overview', t: 'Overview', icon: 'grid' }] },
-    { label: 'Monitor', items: [{ id: 'activity', t: 'Activity', icon: 'list' }, { id: 'approvals', t: 'Approvals', icon: 'check', count: true }, { id: 'alerts', t: 'Alerts', icon: 'bell' }] },
+    { label: 'Monitor', items: [{ id: 'activity', t: 'Activity', icon: 'list' }, { id: 'approvals', t: 'Approvals', icon: 'check', count: true }, { id: 'wallets', t: 'Wallets', icon: 'eye' }, { id: 'alerts', t: 'Alerts', icon: 'bell' }] },
     { label: 'Protect', items: [{ id: 'agents', t: 'Agents', icon: 'bot' }, { id: 'policies', t: 'Policies', icon: 'sliders' }, { id: 'evaluate', t: 'Evaluate', icon: 'play' }] },
     { label: 'Developers', items: [{ id: 'keys', t: 'API keys', icon: 'key' }, { id: 'webhooks', t: 'Webhooks', icon: 'hook' }, { href: API + '/v1/openapi.json', t: 'OpenAPI', icon: 'book' }] },
     { label: 'Organization', items: [{ id: 'members', t: 'Members', icon: 'users' }, { id: 'audit', t: 'Audit log', icon: 'scroll' }, { id: 'settings', t: 'Settings', icon: 'gear' }] },
@@ -250,6 +251,92 @@
     el.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => evaluationModal(b.dataset.open, render)));
   };
 
+  /* ---------------- wallet watchlist ---------------- */
+  const RULE_CODES = ['SEC_DELEGATE_APPROVAL', 'SEC_AUTHORITY_CHANGE', 'SEC_UNEXPECTED_OUTFLOW', 'SEC_UNKNOWN_RECIPIENT', 'SEC_UNKNOWN_INSTRUCTION', 'RISK_SLIPPAGE', 'RISK_MAX_TX_VALUE'];
+  const DIR = { OUTGOING: ['bad', '↑ Out'], INCOMING: ['ok', '↓ In'], INTERNAL: ['mute', '· Internal'] };
+  const rulesText = r => [r.outgoing && 'outgoing', r.incoming && 'incoming', r.onDeny && 'policy denials', r.onApproval && 'approvals', r.failed && 'failed txs', r.codes && r.codes.length && r.codes.length + ' rule code(s)'].filter(Boolean).join(', ') + (r.minValueUsd ? ` · above $${r.minValueUsd}` : '');
+  function walletForm(w, policies, onDone) {
+    const r = (w && w.rules) || { outgoing: true, incoming: false, minValueUsd: null, onDeny: true, onApproval: true, codes: [], failed: false };
+    const chk = (k, t) => `<label class="chk2 full"><input type="checkbox" name="${k}"${r[k] ? ' checked' : ''}>${t}</label>`;
+    modal(w ? 'Edit ' + w.label : 'Watch a wallet', `<form class="form" id="wf2">
+      ${w ? '' : `<label class="fld full"><span>Wallet address</span><input name="address" class="mono" placeholder="Base58 address" required></label>`}
+      <label class="fld"><span>Label</span><input name="label" maxlength="64" value="${esc(w ? w.label : '')}" placeholder="Treasury" required></label>
+      ${w ? '' : `<label class="fld"><span>Network</span><select name="network"><option value="mainnet-beta">Mainnet</option><option value="devnet">Devnet</option></select></label>`}
+      <label class="fld full"><span>Judge its transactions with</span><select name="policyId"><option value="">Intercept reference policy (trading bot)</option>${policies.map(p => `<option value="${p.id}"${w && w.policyId === p.id ? ' selected' : ''}>${esc(p.name)} · v${p.currentVersion}</option>`).join('')}</select></label>
+      <p class="full sect">ALERT ME WHEN</p>
+      ${chk('outgoing', 'Value leaves the wallet')}${chk('incoming', 'Value arrives in the wallet')}
+      <label class="fld full"><span>Only above <small>USD, applies to the two lines above</small></span><input name="minValueUsd" inputmode="decimal" placeholder="any amount" value="${esc(r.minValueUsd || '')}"></label>
+      ${chk('onDeny', 'The policy would deny the transaction')}${chk('onApproval', 'The policy would require approval')}${chk('failed', 'A transaction fails onchain')}
+      <div class="fld full"><span>Always alert on these rules</span>${RULE_CODES.map(c => `<label class="chk2"><input type="checkbox" name="code" value="${c}"${(r.codes || []).includes(c) ? ' checked' : ''}><span class="code-tag">${c}</span></label>`).join('')}</div>
+      <p class="err full" id="wf2-err"></p>
+      <div class="form-act full"><button type="button" class="btn btn-ghost btn-xs" data-x>Cancel</button><button class="btn btn-primary btn-xs">${w ? 'Save' : 'Start watching'}</button></div></form>`,
+    (box, close) => box.querySelector('#wf2').addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = e.target, fd = new FormData(f);
+      const min = String(fd.get('minValueUsd') || '').trim();
+      const rules = { outgoing: f.outgoing.checked, incoming: f.incoming.checked, minValueUsd: min || null, onDeny: f.onDeny.checked, onApproval: f.onApproval.checked, failed: f.failed.checked, codes: fd.getAll('code') };
+      const btn = f.querySelector('button:not([data-x])'); btn.disabled = true; btn.textContent = w ? 'Saving…' : 'Reading recent history…';
+      try {
+        const out = w ? await api('PATCH', o('/wallets/' + w.id), { label: fd.get('label'), policyId: fd.get('policyId') || null, rules })
+          : await post('/wallets', { address: String(fd.get('address')).trim(), label: fd.get('label'), network: fd.get('network'), policyId: fd.get('policyId') || null, rules });
+        close(); toast(w ? 'Saved.' : 'Watching ' + out.label + '.'); onDone(out);
+      } catch (err) { box.querySelector('#wf2-err').textContent = issues(err); btn.disabled = false; btn.textContent = w ? 'Save' : 'Start watching'; }
+    }), true);
+  }
+  VIEWS.wallets = async (el, id) => {
+    if (id) return walletDetail(el, id);
+    crumb(['wallets']);
+    const [W, policies] = await Promise.all([get('/wallets'), get('/policies')]);
+    el.innerHTML = `
+      <div class="ph"><div><h1>Wallets</h1><p>Follow any wallet. Every new transaction is read from the chain and judged on what it actually did, with the policy you choose. Alerts land in <a href="#/alerts">Alerts</a> and in your webhooks (<span class="code-tag">alert.created</span>).</p></div>
+        <div class="ph-act">${admin() ? '<button class="btn btn-primary btn-xs" id="nw2">Watch a wallet</button>' : ''}</div></div>
+      <div class="card">${W.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Label</th><th>Address</th><th>Network</th><th>Alerts on</th><th>24 h</th><th>Last activity</th><th>Status</th></tr></thead><tbody>
+        ${W.map(w => `<tr class="click" data-id="${w.id}"><td class="strong">${esc(w.label)}</td><td class="mono">${esc(short(w.address))}</td><td>${w.network === 'mainnet-beta' ? 'mainnet' : 'devnet'}</td><td style="max-width:280px">${esc(rulesText(w.rules))}</td>
+          <td class="num">${w.events24h} tx · ${w.alerts24h} alert${w.alerts24h === 1 ? '' : 's'}</td><td>${ago(w.lastActivityAt)}</td>
+          <td>${w.paused ? '<span class="pill mute">Paused</span>' : w.lastError ? `<span class="pill hold" title="${esc(w.lastError)}">Retrying</span>` : '<span class="pill ok">Watching</span>'}</td></tr>`).join('')}
+        </tbody></table></div>` : `<div class="empty"><b>No wallets yet</b>Add a treasury, an agent wallet, a counterparty or any address you want to keep an eye on.${admin() ? '<br><button class="btn btn-primary btn-xs" id="nw3">Watch a wallet</button>' : ''}</div>`}</div>
+      <div class="note">Wallets are checked about every minute while Intercept is in use, and continuously when a cron calls <span class="code-tag">POST /v1/internal/tick</span>. ${W.length}/50 wallets.</div>`;
+    ['#nw2', '#nw3'].forEach(sel => { const b = el.querySelector(sel); b && b.addEventListener('click', () => walletForm(null, policies, w => { location.hash = '#/wallets/' + w.id; })); });
+    el.querySelectorAll('tr[data-id]').forEach(tr => tr.addEventListener('click', () => { location.hash = '#/wallets/' + tr.dataset.id; }));
+  };
+  async function walletDetail(el, id) {
+    const [W, policies] = await Promise.all([get('/wallets'), get('/policies')]);
+    const w = W.find(x => x.id === id);
+    if (!w) { el.innerHTML = '<div class="card"><div class="empty">Wallet not found.</div></div>'; return; }
+    crumb(['wallets', w.label]);
+    const E = await get(`/wallets/${w.id}/events`);
+    const explorer = s => w.network === 'mainnet-beta' ? `https://solscan.io/tx/${s}` : `https://solscan.io/tx/${s}?cluster=devnet`;
+    const flow = list => (list || []).map(f => `${f.amount != null ? Number(f.amount).toLocaleString('en-US', { maximumFractionDigits: 4 }) : '?'} ${f.asset === 'SOL' ? 'SOL' : short(f.asset)}`).join(' + ');
+    el.innerHTML = `
+      <div class="ph"><div><h1>${esc(w.label)} ${w.paused ? '<span class="pill mute">Paused</span>' : '<span class="pill ok">Watching</span>'}</h1><p class="mono">${esc(w.address)} · ${w.network === 'mainnet-beta' ? 'mainnet' : 'devnet'}</p></div>
+        <div class="ph-act"><button class="btn btn-ghost btn-xs" id="wrf">Check now</button>${admin() ? `<button class="btn btn-ghost btn-xs" id="wed">Alert rules</button><button class="btn btn-ghost btn-xs" id="wps">${w.paused ? 'Resume' : 'Pause'}</button><button class="btn btn-danger btn-xs" id="wdl">Stop watching</button>` : ''}</div></div>
+      ${w.lastError ? `<div class="note">Last check failed: ${esc(w.lastError)}. It is retried automatically.</div>` : ''}
+      <div class="grid4">
+        <div class="card stat"><span>Alerts on</span><small style="font-size:13px;color:var(--fg)">${esc(rulesText(w.rules))}</small></div>
+        <div class="card stat"><span>Transactions · 24 h</span><b>${w.events24h}</b></div>
+        <div class="card stat"><span>Alerts · 24 h</span><b>${w.alerts24h}</b></div>
+        <div class="card stat"><span>Last checked</span><small style="font-size:13px;color:var(--fg)">${ago(w.lastCheckedAt)}</small></div>
+      </div>
+      <div class="card"><div class="card-h"><h2>Transactions</h2><span class="lnk">${E.length}</span></div>
+        ${E.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Time</th><th>Direction</th><th>Moved</th><th>Value</th><th>Policy</th><th>What</th><th></th></tr></thead><tbody>
+          ${E.map(e => { const [c, t] = DIR[e.direction]; const s = e.summary || {}; return `<tr><td>${ago(e.block_time || e.created_at)}</td><td><span class="pill ${c}">${t}</span>${e.alerted ? ' <span class="pill hold">alert</span>' : ''}</td>
+            <td class="mono" style="max-width:220px">${esc(e.direction === 'INCOMING' ? flow(s.in) : flow(s.out)) || '—'}</td><td class="num">${usd(e.direction === 'INCOMING' ? e.value_in_usd : e.value_out_usd)}</td>
+            <td>${e.decision ? pill({ decision: e.decision }) : '<span class="muted">not signed by it</span>'}${(e.reasons || []).slice(0, 2).map(r => ` <span class="code-tag">${esc(r)}</span>`).join('')}</td>
+            <td style="max-width:240px"><small>${esc((s.kinds || []).join(' · ').toLowerCase().replace(/_/g, ' '))}</small><br><small class="muted">${esc((s.programs || []).join(', '))}</small>${s.failed ? ' <span class="pill bad">failed</span>' : ''}</td>
+            <td><a href="${explorer(e.signature)}" target="_blank" rel="noopener" class="mono">${esc(e.signature.slice(0, 6))}… ↗</a></td></tr>`; }).join('')}
+        </tbody></table></div>` : '<div class="empty">No transaction recorded yet.</div>'}</div>`;
+    el.querySelector('#wrf').addEventListener('click', async e => {
+      e.target.disabled = true; e.target.textContent = 'Checking…';
+      try { const r = await post(`/wallets/${w.id}/refresh`); toast(r.newEvents ? `${r.newEvents} new transaction(s).` : 'No new transaction.'); render(); } catch (err) { toast(err.message, true); e.target.disabled = false; e.target.textContent = 'Check now'; }
+    });
+    const ed = el.querySelector('#wed'); ed && ed.addEventListener('click', () => walletForm(w, policies, () => render()));
+    const ps = el.querySelector('#wps'); ps && ps.addEventListener('click', async () => { await api('PATCH', o('/wallets/' + w.id), { paused: !w.paused }); render(); });
+    const dl = el.querySelector('#wdl'); dl && dl.addEventListener('click', async () => {
+      if (!(await confirmBox('Stop watching ' + w.label + '?', 'Its recorded transactions are deleted. Past alerts stay in Alerts.', 'Stop watching', true))) return;
+      await api('DELETE', o('/wallets/' + w.id)); toast('Stopped watching.'); location.hash = '#/wallets';
+    });
+  }
+
   /* ---------------- alerts ---------------- */
   VIEWS.alerts = async el => {
     crumb(['alerts']);
@@ -257,7 +344,7 @@
     const sev = { LOW: 'mute', MEDIUM: 'hold', HIGH: 'bad', CRITICAL: 'bad' };
     el.innerHTML = `<div class="ph"><div><h1>Alerts</h1><p>Raised on critical denials and on transactions waiting for approval. Subscribe a webhook to <span class="code-tag">alert.created</span> to receive them.</p></div></div>
       <div class="card">${A.length ? `<div class="rows">${A.map(a => `<div class="row"><span class="pill ${sev[a.severity]}">${a.severity.toLowerCase()}</span><div class="grow"><b>${esc(a.message)}</b><small><span class="code-tag">${esc(a.type)}</span> · ${ago(a.created_at)}${a.acknowledged_at ? ' · acknowledged' : ''}</small></div>
-        ${a.evaluation_id ? `<a class="btn btn-ghost btn-xs" href="#/activity/${a.evaluation_id}">Open</a>` : ''}${!a.acknowledged_at && admin() ? `<button class="btn btn-ghost btn-xs" data-ack="${a.id}">Acknowledge</button>` : ''}</div>`).join('')}</div>` : '<div class="empty"><b>No alerts</b>Nothing critical has happened.</div>'}</div>`;
+        ${a.evaluation_id ? `<a class="btn btn-ghost btn-xs" href="#/activity/${a.evaluation_id}">Open</a>` : ''}${a.watched_wallet_id ? `<a class="btn btn-ghost btn-xs" href="#/wallets/${a.watched_wallet_id}">Wallet</a>` : ''}${a.signature ? `<a class="btn btn-ghost btn-xs" href="https://solscan.io/tx/${a.signature}" target="_blank" rel="noopener">Tx ↗</a>` : ''}${!a.acknowledged_at && admin() ? `<button class="btn btn-ghost btn-xs" data-ack="${a.id}">Acknowledge</button>` : ''}</div>`).join('')}</div>` : '<div class="empty"><b>No alerts</b>Nothing critical has happened.</div>'}</div>`;
     el.querySelectorAll('[data-ack]').forEach(b => b.addEventListener('click', async () => { await post(`/alerts/${b.dataset.ack}/ack`); render(); }));
   };
 

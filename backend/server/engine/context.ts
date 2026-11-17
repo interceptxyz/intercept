@@ -38,6 +38,8 @@ export interface Context {
 }
 
 const mintDecimalsCache = new Map<string, number>();
+/** Decimals learned elsewhere (e.g. from recorded token balances) save an RPC call and cover exotic mints. */
+export function primeDecimals(mint: string, decimals: number) { if (Number.isInteger(decimals)) mintDecimalsCache.set(mint, decimals); }
 
 async function mintDecimals(conn: Connection, mints: string[], issues: string[]): Promise<Map<string, number>> {
   const out = new Map<string, number>([[WSOL_MINT, 9]]);
