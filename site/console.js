@@ -635,6 +635,8 @@
       </div></div>
       <div class="card ${org.emergencyStop ? 'banner-bad' : ''}"><div class="card-h"><h2>Emergency stop</h2></div><div class="rows"><div class="row"><div class="grow"><b>${org.emergencyStop ? 'Active: every transaction is denied' : 'Inactive'}</b><small>Denies every evaluation and execution request of every agent, and blocks the use of authorizations already issued. Admins can activate it; only owners can lift it.</small></div>
         ${org.emergencyStop ? (owner() ? '<button class="btn btn-primary btn-xs" id="estop" data-on="0">Lift the stop</button>' : '') : admin() ? '<button class="btn btn-danger btn-xs" id="estop" data-on="1">Stop all agents</button>' : ''}</div></div></div>
+      <div class="card"><div class="card-h"><h2>Public live feed</h2></div><div class="rows"><div class="row"><div class="grow"><b>${org.publicFeed ? 'Sharing anonymized decisions' : 'Not sharing'}</b><small>When on, each decision of this organization appears on <a href="https://www.intercepting.xyz/live" target="_blank" rel="noopener">intercepting.xyz/live</a> with its decision, rule codes, programs and a value range only. Never the organization, agent, wallet, key or exact amount.</small></div>
+        ${admin() ? `<button class="btn ${org.publicFeed ? 'btn-ghost' : 'btn-primary'} btn-xs" id="pfeed" data-on="${org.publicFeed ? '0' : '1'}">${org.publicFeed ? 'Stop sharing' : 'Share'}</button>` : ''}</div></div></div>
       <div class="card"><div class="card-h"><h2>Account</h2></div><div class="kv">
         <div>Signed in as</div><div>${esc(S.session.user.display)}</div>
         ${S.session.user.email ? `<div>Email</div><div>${esc(S.session.user.email)}</div>` : ''}${S.session.user.wallet ? `<div>Wallet</div><div class="mono">${esc(S.session.user.wallet)}</div>` : ''}
@@ -648,6 +650,8 @@
       if (on && !(await confirmBox('Stop all agents?', 'Every transaction from every agent of this organization will be denied until an owner lifts the stop.', 'Stop all agents', true))) return;
       try { await post('/emergency-stop', { active: on }); toast(on ? 'Emergency stop activated.' : 'Emergency stop lifted.'); await loadSession(S.org.id); render(); } catch (e) { toast(e.message, true); }
     });
+    const pf = el.querySelector('#pfeed');
+    pf && pf.addEventListener('click', async () => { try { await api('PATCH', o(''), { publicFeed: pf.dataset.on === '1' }); toast(pf.dataset.on === '1' ? 'Anonymized decisions now appear on the live feed.' : 'Stopped sharing.'); render(); } catch (e) { toast(e.message, true); } });
     el.querySelector('#so2').addEventListener('click', () => $('#signout').click());
   };
 

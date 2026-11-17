@@ -8,11 +8,28 @@ import { HttpError, notFound } from '../lib/util';
 import { attempt } from '../services/webhooks';
 import { consumeAuthorization, evaluate, evaluationView, getEvaluation } from '../services/evaluations';
 import { agentKey, body, ip } from './context';
+import { waitUntil } from '@vercel/functions';
+import { feed, refreshScan, stats } from '../services/feed';
 
 const txBody = z.object({ transaction: z.string().min(80).max(2000), reference: z.string().max(100).optional() });
 
 export function agentRoutes(app: FastifyInstance) {
   const db = getPool();
+
+  // ---------------------------------------------------------------- public live feed (no auth)
+  const kick = () => { const p = refreshScan(db).catch(() => 0); try { waitUntil(p); } catch { /* not on Vercel */ } };
+  app.get('/v1/public/feed', async (req, reply) => {
+    kick();
+    const qs = req.query as any;
+    const since = typeof qs.since === 'string' && !isNaN(Date.parse(qs.since)) ? new Date(qs.since).toISOString() : null;
+    reply.header('cache-control', 'public, max-age=3');
+    return { items: await feed(db, Math.min(Number(qs.limit) || 40, 100), since) };
+  });
+  app.get('/v1/public/stats', async (_req, reply) => {
+    kick();
+    reply.header('cache-control', 'public, max-age=10');
+    return stats(db);
+  });
 
   app.get('/v1/.well-known/intercept-keys', async () => {
     const c = config();

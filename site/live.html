@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intercept · Live feed</title>
+<meta name="description" content="Real onchain transactions evaluated by Intercept, live: decisions, triggered rules, values and latency.">
+<link rel="canonical" href="https://www.intercepting.xyz/live">
+<meta name="theme-color" content="#050608">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.intercepting.xyz/live">
+<meta property="og:title" content="Intercept · Live feed">
+<meta property="og:description" content="Real onchain transactions evaluated by Intercept, live.">
+<meta property="og:image" content="https://www.intercepting.xyz/og.png?v=2">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@interdotxyz">
+<meta name="twitter:title" content="Intercept · Live feed">
+<meta name="twitter:description" content="Real onchain transactions evaluated by Intercept, live.">
+<meta name="twitter:image" content="https://www.intercepting.xyz/og.png?v=2">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+  .lv { padding: 132px 0 120px; }
+  .lv-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 34px; }
+  .lv-head h1 { font: 500 clamp(36px, 4.4vw, 60px)/1.02 var(--display); letter-spacing: -.04em; margin: 14px 0 0; }
+  .lv-head p { margin: 16px 0 0; max-width: 62ch; color: var(--fg-2); font-size: 15.5px; line-height: 1.6; }
+  .lv-pulse { display: inline-flex; align-items: center; gap: 10px; font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); }
+  .lv-pulse i { width: 8px; height: 8px; border-radius: 50%; background: #7fbf96; box-shadow: 0 0 0 0 rgba(127,191,150,.6); animation: lv-p 1.8s infinite; }
+  .lv-pulse.off i { background: #6f7a8c; animation: none; }
+  @keyframes lv-p { 70% { box-shadow: 0 0 0 10px rgba(127,191,150,0); } 100% { box-shadow: 0 0 0 0 rgba(127,191,150,0); } }
+  .lv-stats { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-bottom: 28px; }
+  .lv-stat { padding: 20px 22px; border-right: 1px solid var(--line); }
+  .lv-stat:last-child { border-right: 0; }
+  .lv-stat span { display: block; font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); }
+  .lv-stat b { display: block; margin-top: 14px; font: 500 26px/1 var(--display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .c-ok { color: #7fbf96; } .c-bad { color: #e0776b; } .c-hold { color: #cfae6e; }
+  .lv-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+  .lv-list { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .lv-row { display: grid; grid-template-columns: 112px 92px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .lv-row:last-child { border-bottom: 0; }
+  .lv-row.new { animation: lv-in .9s var(--ease, ease) both; }
+  @keyframes lv-in { from { background: rgba(255,255,255,.06); opacity: 0; transform: translateY(-6px); } }
+  .lv-dec { display: inline-flex; align-items: center; justify-content: center; height: 24px; padding: 0 10px; border-radius: 100px; font: 500 11px/1 var(--mono); letter-spacing: .08em; border: 1px solid; }
+  .lv-dec.ALLOW { color: #7fbf96; border-color: rgba(127,191,150,.4); background: rgba(127,191,150,.07); }
+  .lv-dec.DENY { color: #e0776b; border-color: rgba(224,119,107,.4); background: rgba(224,119,107,.07); }
+  .lv-dec.REQUIRE_APPROVAL { color: #cfae6e; border-color: rgba(207,174,110,.4); background: rgba(207,174,110,.07); }
+  .lv-val { font: 500 15px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .lv-what { min-width: 0; }
+  .lv-what b { display: block; font-weight: 500; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lv-what small { display: block; margin-top: 4px; color: var(--fg-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lv-codes { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .lv-codes code { font: 500 10.5px/1 ui-monospace, Menlo, monospace; padding: 4px 6px; border-radius: 5px; background: rgba(255,255,255,.05); color: var(--fg-2); }
+  .lv-meta { text-align: right; color: var(--fg-3); font-size: 12px; white-space: nowrap; }
+  .lv-meta a { color: var(--fg-2); }
+  .lv-meta a:hover { color: var(--fg); }
+  .lv-side { border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; position: sticky; top: 96px; }
+  .lv-side h2 { font: 500 16px/1.2 var(--display); margin: 0 0 14px; letter-spacing: -.01em; }
+  .lv-side dl { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; font-size: 13px; }
+  .lv-side dt { color: var(--fg-3); } .lv-side dd { margin: 0; text-align: right; color: var(--fg); }
+  .lv-side p { margin: 16px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--fg-3); }
+  .lv-top { margin-top: 18px; display: grid; gap: 8px; }
+  .lv-top div { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; font-size: 12px; }
+  .lv-top i { grid-column: 1 / -1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .lv-top i::after { content: ''; display: block; height: 100%; width: var(--w); background: #9aa4b5; }
+  .lv-empty { padding: 48px 18px; text-align: center; color: var(--fg-3); }
+  .lv-tag { display: inline-block; margin-left: 6px; font: 500 10px/1 var(--mono); letter-spacing: .08em; color: var(--fg-3); text-transform: uppercase; }
+  @media (max-width: 1000px) { .lv-grid { grid-template-columns: 1fr; } .lv-side { position: static; } .lv-stats { grid-template-columns: repeat(3, 1fr); } .lv-stat:nth-child(3) { border-right: 0; } .lv-stat:nth-child(-n+3) { border-bottom: 1px solid var(--line); } }
+  @media (max-width: 640px) {
+    .lv-stats { grid-template-columns: 1fr 1fr; }
+    .lv-stat:nth-child(n) { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .lv-stat:nth-child(2n) { border-right: 0; }
+    .lv-row { grid-template-columns: auto minmax(0, 1fr); }
+    .lv-row .lv-val { justify-self: end; }
+    .lv-row .lv-what, .lv-row .lv-meta { grid-column: 1 / -1; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<!--#nav-->
+
+<main id="main" class="lv">
+  <div class="wrap">
+    <div class="lv-head">
+      <div>
+        <span class="lv-pulse" id="pulse"><i></i><span id="pulse-t">Connecting</span></span>
+        <h1>Live feed</h1>
+        <p>Real mainnet transactions, picked as they land and evaluated by the Intercept engine against the reference policy: decoded from their bytes, measured from their recorded execution, priced, then checked. Customer decisions appear here only when an organization opts in, anonymized.</p>
+      </div>
+      <a class="btn btn-ghost" href="https://app.intercepting.xyz">Evaluate your own <span class="ne" aria-hidden="true">→</span></a>
+    </div>
+
+    <div class="lv-stats" aria-label="Last 24 hours">
+      <div class="lv-stat"><span>Evaluated · 24 h</span><b id="s-total">—</b></div>
+      <div class="lv-stat"><span>Allowed</span><b class="c-ok" id="s-allow">—</b></div>
+      <div class="lv-stat"><span>Denied</span><b class="c-bad" id="s-deny">—</b></div>
+      <div class="lv-stat"><span>Held for approval</span><b class="c-hold" id="s-hold">—</b></div>
+      <div class="lv-stat"><span>Median latency</span><b id="s-lat">—</b></div>
+    </div>
+
+    <div class="lv-grid">
+      <div class="lv-list" id="list" aria-live="polite"><div class="lv-empty">Waiting for the first transactions…</div></div>
+      <aside class="lv-side">
+        <h2>Reference policy</h2>
+        <dl id="policy">
+          <dt>Max per transaction</dt><dd>$5,000</dd>
+          <dt>Human approval above</dt><dd>$1,000</dd>
+          <dt>Max swap slippage</dt><dd>3%</dd>
+          <dt>Unknown programs</dt><dd>Approval</dd>
+          <dt>Simulation</dt><dd>Required</dd>
+          <dt>Missing data</dt><dd>Deny</dd>
+        </dl>
+        <div class="lv-top" id="top"></div>
+        <p>Values are the USD leaving the fee payer, at current market prices. Rows link to the original transaction. Nothing here is executed or blocked onchain: these are the decisions Intercept would have returned.</p>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<!--#footer-->
+
+<script>
+(function () {
+  const API = 'https://api.intercepting.xyz/v1/public';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const LABEL = { ALLOW: 'Allowed', DENY: 'Denied', REQUIRE_APPROVAL: 'Approval' };
+  const KIND = { SWAP: 'Swap', SOL_TRANSFER: 'SOL transfer', TOKEN_TRANSFER: 'Token transfer', TOKEN_APPROVE: 'Delegate approval', SET_AUTHORITY: 'Authority change', ATA_CREATE: 'Account creation', CLOSE_ACCOUNT: 'Account close', CREATE_ACCOUNT: 'Account creation', TOKEN_BURN: 'Burn', MINT_TO: 'Mint', UNKNOWN: 'Unrecognized instruction' };
+  const ago = (iso) => { const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000); return s < 60 ? Math.floor(s) + 's ago' : s < 3600 ? Math.floor(s / 60) + 'm ago' : Math.floor(s / 3600) + 'h ago'; };
+  const money = (it) => it.valueUsd != null ? '$' + Number(it.valueUsd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : it.valueBucket || 'unpriced';
+  let items = [], seen = new Set(), failures = 0;
+
+  function row(it, isNew) {
+    const kinds = [...new Set(it.kinds.map((k) => KIND[k] || k))].slice(0, 3).join(' · ') || 'Transaction';
+    const progs = it.programs.filter((p) => !/Associated Token|Compute/.test(p)).slice(0, 3).join(', ');
+    return `<div class="lv-row${isNew ? ' new' : ''}">
+      <span class="lv-dec ${it.decision}">${LABEL[it.decision] || it.decision}</span>
+      <span class="lv-val">${money(it)}</span>
+      <div class="lv-what"><b>${esc(kinds)}${it.source === 'customer' ? '<span class="lv-tag">customer</span>' : ''}</b><small>${esc(progs)}</small>
+        ${it.reasons.length ? `<div class="lv-codes">${it.reasons.slice(0, 3).map((c) => `<code>${esc(c)}</code>`).join('')}</div>` : ''}</div>
+      <div class="lv-meta">${it.latencyMs} ms · <span data-at="${esc(it.at)}">${ago(it.at)}</span>${it.explorer ? `<br><a href="${esc(it.explorer)}" target="_blank" rel="noopener">${esc(it.signature.slice(0, 6))}…${esc(it.signature.slice(-4))} ↗</a>` : ''}</div>
+    </div>`;
+  }
+  function render(fresh) {
+    if (!items.length) return;
+    $('list').innerHTML = items.slice(0, 40).map((it) => row(it, fresh.has(it.id))).join('');
+  }
+  async function poll() {
+    try {
+      const r = await fetch(API + '/feed?limit=40', { cache: 'no-store' });
+      const j = await r.json();
+      const fresh = new Set();
+      for (const it of j.items) if (!seen.has(it.id)) { if (seen.size) fresh.add(it.id); seen.add(it.id); }
+      items = j.items;
+      render(fresh);
+      failures = 0;
+      $('pulse').classList.remove('off'); $('pulse-t').textContent = 'Live';
+    } catch (e) {
+      if (++failures > 2) { $('pulse').classList.add('off'); $('pulse-t').textContent = 'Reconnecting'; }
+    }
+  }
+  async function stats() {
+    try {
+      const s = await (await fetch(API + '/stats', { cache: 'no-store' })).json();
+      $('s-total').textContent = s.evaluations.toLocaleString('en-US');
+      $('s-allow').textContent = (s.decisions.ALLOW || 0).toLocaleString('en-US');
+      $('s-deny').textContent = (s.decisions.DENY || 0).toLocaleString('en-US');
+      $('s-hold').textContent = (s.decisions.REQUIRE_APPROVAL || 0).toLocaleString('en-US');
+      $('s-lat').textContent = s.latencyP50Ms != null ? s.latencyP50Ms + ' ms' : '—';
+      const max = s.topReasons.length ? s.topReasons[0].n : 1;
+      $('top').innerHTML = s.topReasons.length ? '<h2 style="margin:6px 0 2px">Most triggered · 24 h</h2>' + s.topReasons.map((t) => `<div><code style="font:500 11px ui-monospace,Menlo,monospace;color:var(--fg-2)">${esc(t.code)}</code><span style="color:var(--fg-3)">${t.n}</span><i style="--w:${Math.round(t.n / max * 100)}%"></i></div>`).join('') : '';
+    } catch (e) { /* keep last values */ }
+  }
+  poll(); stats();
+  setInterval(poll, 5000);
+  setInterval(stats, 20000);
+  setInterval(() => document.querySelectorAll('[data-at]').forEach((el) => { el.textContent = ago(el.dataset.at); }), 1000);
+})();
+</script>
+<script src="/site.js" defer></script>
+</body>
+</html>

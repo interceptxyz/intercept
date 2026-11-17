@@ -37,16 +37,25 @@ export const WSOL_MINT = 'So11111111111111111111111111111111111111112';
 const anchorDisc = (name: string) => createHash('sha256').update(`global:${name}`).digest().subarray(0, 8).toString('hex');
 
 /**
- * Jupiter v6 swap instructions. The fixed-size arguments sit at the end of the instruction data,
- * after the variable-length route plan, so they are read from the tail:
+ * Jupiter v6 swap instructions, from the program's on-chain Anchor IDL.
+ * v1 layouts put the variable-length route plan first, so the fixed fields are read from the tail:
  *   ..., [in_amount|out_amount u64], [quoted_out|quoted_in u64], slippage_bps u16, platform_fee_bps u8
- * The *_with_token_ledger variants have no first amount (11-byte tail).
+ *   (*_with_token_ledger: no first amount, 11-byte tail)
+ * v2 layouts put the fixed fields first, after the discriminator (and the u8 `id` for shared accounts):
+ *   [in_amount|out_amount u64], [quoted u64], slippage_bps u16, platform_fee_bps u16, positive_slippage_bps u16, route_plan...
  */
-export const JUPITER_IX: Record<string, { name: string; exactOut: boolean; tail: 19 | 11 }> = {
-  [anchorDisc('route')]: { name: 'route', exactOut: false, tail: 19 },
-  [anchorDisc('shared_accounts_route')]: { name: 'shared_accounts_route', exactOut: false, tail: 19 },
-  [anchorDisc('route_with_token_ledger')]: { name: 'route_with_token_ledger', exactOut: false, tail: 11 },
-  [anchorDisc('shared_accounts_route_with_token_ledger')]: { name: 'shared_accounts_route_with_token_ledger', exactOut: false, tail: 11 },
-  [anchorDisc('exact_out_route')]: { name: 'exact_out_route', exactOut: true, tail: 19 },
-  [anchorDisc('shared_accounts_exact_out_route')]: { name: 'shared_accounts_exact_out_route', exactOut: true, tail: 19 },
+export type JupiterLayout = { name: string; exactOut: boolean } & ({ at: 'tail'; tail: 19 | 11 } | { at: 'head'; offset: 8 | 9 });
+export const JUPITER_IX: Record<string, JupiterLayout> = {
+  [anchorDisc('route')]: { name: 'route', exactOut: false, at: 'tail', tail: 19 },
+  [anchorDisc('shared_accounts_route')]: { name: 'shared_accounts_route', exactOut: false, at: 'tail', tail: 19 },
+  [anchorDisc('route_with_token_ledger')]: { name: 'route_with_token_ledger', exactOut: false, at: 'tail', tail: 11 },
+  [anchorDisc('shared_accounts_route_with_token_ledger')]: { name: 'shared_accounts_route_with_token_ledger', exactOut: false, at: 'tail', tail: 11 },
+  [anchorDisc('exact_out_route')]: { name: 'exact_out_route', exactOut: true, at: 'tail', tail: 19 },
+  [anchorDisc('shared_accounts_exact_out_route')]: { name: 'shared_accounts_exact_out_route', exactOut: true, at: 'tail', tail: 19 },
+  [anchorDisc('route_v2')]: { name: 'route_v2', exactOut: false, at: 'head', offset: 8 },
+  [anchorDisc('exact_out_route_v2')]: { name: 'exact_out_route_v2', exactOut: true, at: 'head', offset: 8 },
+  [anchorDisc('shared_accounts_route_v2')]: { name: 'shared_accounts_route_v2', exactOut: false, at: 'head', offset: 9 },
+  [anchorDisc('shared_accounts_exact_out_route_v2')]: { name: 'shared_accounts_exact_out_route_v2', exactOut: true, at: 'head', offset: 9 },
+  [anchorDisc('route_with_attestation')]: { name: 'route_with_attestation', exactOut: false, at: 'head', offset: 8 },
+  [anchorDisc('shared_accounts_route_with_attestation')]: { name: 'shared_accounts_route_with_attestation', exactOut: false, at: 'head', offset: 9 },
 };

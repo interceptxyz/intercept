@@ -70,13 +70,14 @@ export function consoleRoutes(app: FastifyInstance, verifier: IdentityVerifier) 
   app.get('/v1/orgs/:orgId', async (req) => {
     const m = await member(req);
     const o = await one(db, 'SELECT * FROM organizations WHERE id = $1', [m.orgId]);
-    return { id: o.id, name: o.name, emergencyStop: o.emergency_stop, createdAt: o.created_at, role: m.role };
+    return { id: o.id, name: o.name, emergencyStop: o.emergency_stop, publicFeed: o.public_feed, createdAt: o.created_at, role: m.role };
   });
   app.patch('/v1/orgs/:orgId', async (req) => {
     const m = await member(req, 'ADMIN');
-    const b = body(req, z.object({ name }));
-    await q(db, 'UPDATE organizations SET name = $2 WHERE id = $1', [m.orgId, b.name]);
-    await audit(db, { orgId: m.orgId, actorType: 'user', actorId: m.user.id, action: 'organization.rename', detail: { name: b.name }, ip: ip(req) });
+    const b = body(req, z.object({ name: name.optional(), publicFeed: z.boolean().optional() }));
+    if (b.name !== undefined) await q(db, 'UPDATE organizations SET name = $2 WHERE id = $1', [m.orgId, b.name]);
+    if (b.publicFeed !== undefined) await q(db, 'UPDATE organizations SET public_feed = $2 WHERE id = $1', [m.orgId, b.publicFeed]);
+    await audit(db, { orgId: m.orgId, actorType: 'user', actorId: m.user.id, action: 'organization.update', detail: b, ip: ip(req) });
     return { ok: true };
   });
   app.post('/v1/orgs/:orgId/emergency-stop', async (req) => {

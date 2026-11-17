@@ -233,4 +233,32 @@ CREATE TABLE audit_logs (
 CREATE INDEX audit_org ON audit_logs(org_id, id DESC);
 `,
   },
+  {
+    id: '002_public_feed',
+    sql: `
+-- organizations choose whether their (anonymized) decisions appear on the public live feed
+ALTER TABLE organizations ADD COLUMN public_feed BOOLEAN NOT NULL DEFAULT false;
+
+-- public, anonymized: no organization, agent, wallet or key is ever stored here
+CREATE TABLE public_feed (
+  id          TEXT PRIMARY KEY,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  source      TEXT NOT NULL CHECK (source IN ('mainnet_scan','customer')),
+  network     TEXT NOT NULL,
+  decision    TEXT NOT NULL,
+  reasons     TEXT[] NOT NULL,
+  value_usd   NUMERIC(38,2),               -- exact only for mainnet scans (public chain data)
+  value_bucket TEXT,                       -- customers: coarse range only
+  programs    TEXT[] NOT NULL,
+  kinds       TEXT[] NOT NULL,             -- e.g. SWAP, SOL_TRANSFER, TOKEN_TRANSFER
+  sim_status  TEXT,
+  latency_ms  INT NOT NULL,
+  signature   TEXT                         -- mainnet scans only: the public on-chain signature
+);
+CREATE INDEX public_feed_time ON public_feed(created_at DESC);
+CREATE UNIQUE INDEX public_feed_sig ON public_feed(signature) WHERE signature IS NOT NULL;
+
+CREATE TABLE kv_state (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now());
+`,
+  },
 ];

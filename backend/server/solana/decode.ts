@@ -188,12 +188,22 @@ export function decodeInstruction(index: number, stackHeight: number, program: s
     }
     if (program === PROGRAMS.JUPITER_V6) {
       const j = data.length >= 8 ? JUPITER_IX[data.subarray(0, 8).toString('hex')] : undefined;
-      if (!j || data.length < 8 + j.tail) return unknown('Jupiter instruction not interpreted');
-      const tail = data.subarray(data.length - j.tail);
-      const amount = j.tail === 19 ? u64(tail, 0) : null;
-      const quoted = u64(tail, j.tail === 19 ? 8 : 0);
-      const slippageBps = tail.readUInt16LE(j.tail - 3);
-      const platformFeeBps = tail[j.tail - 1];
+      if (!j) return unknown('Jupiter instruction not interpreted');
+      let amount: string | null, quoted: string, slippageBps: number, platformFeeBps: number;
+      if (j.at === 'tail') {
+        if (data.length < 8 + j.tail) return unknown('Jupiter instruction too short');
+        const tail = data.subarray(data.length - j.tail);
+        amount = j.tail === 19 ? u64(tail, 0) : null;
+        quoted = u64(tail, j.tail === 19 ? 8 : 0);
+        slippageBps = tail.readUInt16LE(j.tail - 3);
+        platformFeeBps = tail[j.tail - 1];
+      } else {
+        if (data.length < j.offset + 22) return unknown('Jupiter instruction too short');
+        amount = u64(data, j.offset);
+        quoted = u64(data, j.offset + 8);
+        slippageBps = data.readUInt16LE(j.offset + 16);
+        platformFeeBps = data.readUInt16LE(j.offset + 18);
+      }
       if (slippageBps > 10_000) return unknown('Jupiter instruction has an implausible slippage field');
       return { ...base, effects: [{ kind: 'SWAP', program, instruction: j.name, slippageBps, platformFeeBps, exactOut: j.exactOut, amount, quotedAmount: quoted }] };
     }

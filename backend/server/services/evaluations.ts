@@ -14,6 +14,7 @@ import { buildContext, fmtUsd } from '../engine/context';
 import { History, decide, firewallChecks, riskChecks, systemChecks } from '../engine/checks';
 import { alert, emit } from './webhooks';
 import { audit } from './audit';
+import { recordCustomer } from './feed';
 
 export interface EvaluateInput {
   orgId: string; agentId: string; transaction: string; source: 'api' | 'console'; kind: 'evaluate' | 'execution_request';
@@ -102,6 +103,7 @@ export async function evaluate(db: Db, input: EvaluateInput) {
     if (input.kind === 'execution_request' && decision === 'ALLOW') authorization = await issueAuthorization(c, { orgId: input.orgId, agentId: agent.id, evaluationId: id, messageHash: ctx.decoded.messageHash, network, ttl: policy.execution.authorizationTtlSecs });
     return { deliveries, authorization };
   });
+  await recordCustomer(db, input.orgId, { decision, reasons, valueUsd: ctx.valueUsd === null ? null : decStr(ctx.valueUsd, 2), network, programs: ctx.decoded.programs, instructions: ctx.allInstructions, simStatus: ctx.simulation?.status ?? null, latencyMs: latency }).catch(() => undefined);
   return { id, result, row: await getEvaluation(db, input.orgId, id) };
 }
 

@@ -53,7 +53,7 @@ async function mintDecimals(conn: Connection, mints: string[], issues: string[])
   return out;
 }
 
-export async function buildContext(vtx: VersionedTransaction, opts: { conn: Connection; network: Network; wallet: string | null; runSimulation: boolean }): Promise<Context> {
+export async function buildContext(vtx: VersionedTransaction, opts: { conn: Connection; network: Network; wallet: string | null; runSimulation: boolean; observed?: (decoded: DecodedTransaction) => Simulation }): Promise<Context> {
   const { conn, network } = opts;
   const rpcIssues: string[] = [];
   const decoded = await decodeTransaction(vtx, conn);
@@ -68,7 +68,8 @@ export async function buildContext(vtx: VersionedTransaction, opts: { conn: Conn
   } catch (e: any) { rpcIssues.push(e.message); }
   const portfolioOk = lamports !== null;
 
-  const simulation = opts.runSimulation ? await simulate(conn, vtx, decoded, wallet, walletTokens) : null;
+  // `observed` replaces simulation with the recorded execution of an already-landed transaction
+  const simulation = opts.observed ? opts.observed(decoded) : opts.runSimulation ? await simulate(conn, vtx, decoded, wallet, walletTokens) : null;
   let currentSlot = simulation?.slot ?? null;
   if (currentSlot === null) { try { currentSlot = await rpc('getSlot', () => conn.getSlot('confirmed')); } catch (e: any) { rpcIssues.push(e.message); } }
 

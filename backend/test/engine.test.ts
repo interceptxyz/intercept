@@ -68,6 +68,18 @@ describe('decoder', () => {
     expect(d.unknownPrograms).toEqual([stranger.toBase58()]);
   });
 
+  it('matches the Jupiter v6 on-chain IDL discriminators and decodes v2 head layouts', async () => {
+    const { JUPITER_IX } = await import('../server/solana/programs');
+    const idl: Record<string, string> = { route: 'e517cb977ae3ad2a', shared_accounts_route: 'c1209b3341d69c81', exact_out_route: 'd033ef977b2bed5c', route_v2: 'bb64facc31c4af14', shared_accounts_route_v2: 'd19853937cfed8e9', exact_out_route_v2: '9d8ab85215f4f324', shared_accounts_exact_out_route_v2: '3560e5cad8bbfa18', route_with_attestation: 'a0752c34dc4d5140', shared_accounts_route_with_attestation: '252ef97ec9a238ca' };
+    for (const [name, disc] of Object.entries(idl)) expect(JUPITER_IX[disc]?.name).toBe(name);
+    const { decodeInstruction } = await import('../server/solana/decode');
+    const data = Buffer.alloc(9 + 22 + 6);
+    Buffer.from('d19853937cfed8e9', 'hex').copy(data, 0); data[8] = 3;
+    data.writeBigUInt64LE(5_000_000n, 9); data.writeBigUInt64LE(81_000n, 17); data.writeUInt16LE(75, 25); data.writeUInt16LE(20, 27);
+    const d = decodeInstruction(0, 1, 'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4', [], data);
+    expect(d.effects[0]).toMatchObject({ kind: 'SWAP', instruction: 'shared_accounts_route_v2', amount: '5000000', quotedAmount: '81000', slippageBps: 75, platformFeeBps: 20 });
+  });
+
   it('rejects garbage', () => {
     expect(() => parseTransaction('not base64!')).toThrow(/base64/);
     expect(() => parseTransaction(Buffer.alloc(100, 7).toString('base64'))).toThrow();
