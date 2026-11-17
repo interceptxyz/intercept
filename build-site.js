@@ -24,7 +24,7 @@ const appOut = path.join(root, 'public-app');
 fs.mkdirSync(appOut, { recursive: true });
 for (const f of fs.readdirSync(appOut)) if (f !== '.vercel') fs.rmSync(path.join(appOut, f), { recursive: true, force: true });
 fs.copyFileSync(path.join(out, 'app.html'), path.join(appOut, 'index.html'));
-for (const f of ['app.css', 'app.js', 'console.css', 'console.js', 'site.css', 'gradient.js', 'liquid.frag', 'mark.png', 'favicon.ico', 'favicon-32.png', 'favicon-180.png', 'favicon-512.png', 'og.png', '.vercelignore', '.gitignore']) fs.copyFileSync(path.join(out, f), path.join(appOut, f));
+for (const f of ['app.css', 'app.js', 'console.css', 'console.js', 'playground.js', 'site.css', 'gradient.js', 'liquid.frag', 'mark.png', 'favicon.ico', 'favicon-32.png', 'favicon-180.png', 'favicon-512.png', 'og.png', '.vercelignore', '.gitignore']) fs.copyFileSync(path.join(out, f), path.join(appOut, f));
 fs.cpSync(path.join(out, 'privy'), path.join(appOut, 'privy'), { recursive: true });
 // the API: backend/ (TypeScript, Fastify) is the source; one Vercel function serves /v1/* on
 // app.intercepting.xyz and api.intercepting.xyz
@@ -48,5 +48,5 @@ fs.writeFileSync(path.join(appOut, 'vercel.json'), JSON.stringify({
   functions: { 'api/main.ts': { maxDuration: 30 } },
 }, null, 2));
 // the marketing site no longer serves the app or its auth API
-for (const f of ['app.html', 'app.css', 'app.js', 'console.css', 'console.js', 'privy']) fs.rmSync(path.join(out, f), { recursive: true, force: true });
+for (const f of ['app.html', 'app.css', 'app.js', 'console.css', 'console.js', 'playground.js', 'privy']) fs.rmSync(path.join(out, f), { recursive: true, force: true });
 console.log('built', fs.readdirSync(out), fs.readdirSync(appOut));

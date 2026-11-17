@@ -306,4 +306,29 @@ ALTER TABLE alerts ADD COLUMN watched_wallet_id TEXT;
 ALTER TABLE alerts ADD COLUMN signature TEXT;
 `,
   },
+  {
+    id: '004_playground',
+    sql: `
+-- API Playground request history: per organization and per user, never part of production analytics.
+CREATE TABLE playground_requests (
+  id          TEXT PRIMARY KEY,
+  org_id      TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  method      TEXT NOT NULL,
+  path        TEXT NOT NULL,
+  endpoint    TEXT NOT NULL,                        -- allowlist entry id
+  status      INT NOT NULL,
+  decision    TEXT,
+  duration_ms INT NOT NULL,
+  agent_id    TEXT,
+  environment TEXT,
+  scenario    TEXT,
+  auth        TEXT NOT NULL,                        -- 'session', 'none' or 'api_key icpt_xxxx_…' (prefix only)
+  request     JSONB NOT NULL,                       -- query, custom headers, body (never credentials)
+  response    JSONB,                                -- status, headers, body (capped)
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX playground_user ON playground_requests(org_id, user_id, created_at DESC);
+`,
+  },
 ];

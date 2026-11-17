@@ -22,6 +22,7 @@
   "overrides": {
     "rpc-websockets": {
       "uuid": "11.1.0"
-    }
+    },
+    "light-my-request": "6.6.0"
   }
 }

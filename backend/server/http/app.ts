@@ -7,6 +7,7 @@ import { IdentityVerifier, privyVerifier } from '../services/identity';
 import { drainDue } from '../services/webhooks';
 import { agentRoutes } from './agent-routes';
 import { consoleRoutes } from './console-routes';
+import { playgroundRoutes } from './playground-routes';
 import { OPENAPI } from './openapi';
 
 export interface AppOptions { verifier?: IdentityVerifier; logger?: boolean }
@@ -62,6 +63,7 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
   app.get('/v1/openapi.json', async () => OPENAPI);
   consoleRoutes(app, opts.verifier ?? privyVerifier);
   agentRoutes(app);
+  playgroundRoutes(app);
   await app.ready();
   return app;
 }

@@ -39,19 +39,24 @@ export interface Context {
 
 const mintDecimalsCache = new Map<string, number>();
 /** Decimals learned elsewhere (e.g. from recorded token balances) save an RPC call and cover exotic mints. */
+const MAX_HOLDINGS_PRICED = Number(process.env.MAX_HOLDINGS_PRICED ?? 47);
 export function primeDecimals(mint: string, decimals: number) { if (Number.isInteger(decimals)) mintDecimalsCache.set(mint, decimals); }
 
 async function mintDecimals(conn: Connection, mints: string[], issues: string[]): Promise<Map<string, number>> {
   const out = new Map<string, number>([[WSOL_MINT, 9]]);
   const need = [...new Set(mints)].filter((m) => { const c = mintDecimalsCache.get(m); if (c !== undefined) out.set(m, c); return c === undefined && m !== WSOL_MINT; });
   if (!need.length) return out;
-  try {
-    const infos = await rpc('getMultipleAccountsInfo(mints)', () => conn.getMultipleAccountsInfo(need.map((m) => new PublicKey(m)), 'confirmed'));
-    infos.forEach((info, i) => {
-      const d = info ? parseMintDecimals(info.owner.toBase58(), Buffer.from(info.data)) : null;
-      if (d !== null) { mintDecimalsCache.set(need[i], d); out.set(need[i], d); }
-    });
-  } catch (e: any) { issues.push(e.message); }
+  // getMultipleAccounts accepts at most 100 keys per call
+  for (let k = 0; k < need.length; k += 100) {
+    const part = need.slice(k, k + 100);
+    try {
+      const infos = await rpc('getMultipleAccountsInfo(mints)', () => conn.getMultipleAccountsInfo(part.map((m) => new PublicKey(m)), 'confirmed'));
+      infos.forEach((info, i) => {
+        const d = info ? parseMintDecimals(info.owner.toBase58(), Buffer.from(info.data)) : null;
+        if (d !== null) { mintDecimalsCache.set(part[i], d); out.set(part[i], d); }
+      });
+    } catch (e: any) { issues.push(e.message); }
+  }
   return out;
 }
 
@@ -139,8 +144,13 @@ export async function buildContext(vtx: VersionedTransaction, opts: { conn: Conn
     for (const t of walletTokens) add(rawHold, t.mint, t.amount);
   }
 
-  const mints = [...new Set([...rawOut.keys(), ...rawIn.keys(), ...rawHold.keys()].filter((m) => m !== SOL))];
-  for (const { effect } of effects) if (effect.kind === 'TOKEN_TRANSFER' && effect.mint) mints.push(effect.mint);
+  // the assets this transaction moves are always priced; other holdings up to a cap (wallets with
+  // hundreds of dust tokens would exhaust the price API). Unpriced holdings make portfolio checks UNCERTAIN.
+  const flowMints = new Set([...rawOut.keys(), ...rawIn.keys()].filter((m) => m !== SOL));
+  for (const { effect } of effects) if (effect.kind === 'TOKEN_TRANSFER' && effect.mint) flowMints.add(effect.mint);
+  const held = [...rawHold].filter(([m, v]) => m !== SOL && v > 0n && !flowMints.has(m)).map(([m]) => m);
+  if (held.length > MAX_HOLDINGS_PRICED) rpcIssues.push(`holdings: ${held.length} token positions, the ${MAX_HOLDINGS_PRICED} first are priced`);
+  const mints = [...flowMints, ...held.slice(0, MAX_HOLDINGS_PRICED)];
   const decimals = await mintDecimals(conn, mints, rpcIssues);
   const { prices, errors: priceErrors } = await getPrices([WSOL_MINT, ...mints], network);
 

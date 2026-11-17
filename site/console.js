@@ -40,6 +40,7 @@
     users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
     scroll: '<path d="M8 3h11v15a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-2h11v2a3 3 0 0 0 3 3"/><path d="M8 3a3 3 0 0 0-3 3v10M11 8h5M11 12h5"/>',
     book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Z"/><path d="M4 19a2 2 0 0 1 2-2h13"/>',
+    term: '<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="m7.5 9.5 3 2.5-3 2.5M12.5 15h4"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
   };
   const ic = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${I[n] || ''}</svg>`;
@@ -47,7 +48,7 @@
     { items: [{ id: 'overview', t: 'Overview', icon: 'grid' }] },
     { label: 'Monitor', items: [{ id: 'activity', t: 'Activity', icon: 'list' }, { id: 'approvals', t: 'Approvals', icon: 'check', count: true }, { id: 'wallets', t: 'Wallets', icon: 'eye' }, { id: 'alerts', t: 'Alerts', icon: 'bell' }] },
     { label: 'Protect', items: [{ id: 'agents', t: 'Agents', icon: 'bot' }, { id: 'policies', t: 'Policies', icon: 'sliders' }, { id: 'evaluate', t: 'Evaluate', icon: 'play' }] },
-    { label: 'Developers', items: [{ id: 'keys', t: 'API keys', icon: 'key' }, { id: 'webhooks', t: 'Webhooks', icon: 'hook' }, { href: API + '/v1/openapi.json', t: 'OpenAPI', icon: 'book' }] },
+    { label: 'Developers', items: [{ id: 'playground', t: 'API Playground', icon: 'term' }, { id: 'keys', t: 'API keys', icon: 'key' }, { id: 'webhooks', t: 'Webhooks', icon: 'hook' }, { href: API + '/v1/openapi.json', t: 'OpenAPI', icon: 'book' }] },
     { label: 'Organization', items: [{ id: 'members', t: 'Members', icon: 'users' }, { id: 'audit', t: 'Audit log', icon: 'scroll' }, { id: 'settings', t: 'Settings', icon: 'gear' }] },
   ];
   const VIEWS = {};
@@ -124,7 +125,7 @@
     if (v === 'invite' && p) return acceptInvite(p);
     const fn = VIEWS[v] || VIEWS.overview;
     nav();
-    $('#view').innerHTML = '<div class="view-in"><div class="empty">Loading…</div></div>';
+    $('#view').innerHTML = `<div class="view-in${v === 'playground' ? ' wide' : ''}"><div class="empty">Loading…</div></div>`;
     $('.shell').classList.remove('is-mobile-open');
     const el = $('#view .view-in');
     try { await fn(el, p); } catch (e) { el.innerHTML = `<div class="card"><div class="empty"><b>Could not load this page</b>${esc(e.message)}<br><button class="btn btn-ghost btn-xs" id="rt">Retry</button></div></div>`; el.querySelector('#rt').onclick = render; }
@@ -220,7 +221,7 @@
     const qs = new URLSearchParams({ limit: '200', ...(f.decision ? { decision: f.decision } : {}), ...(f.agentId ? { agentId: f.agentId } : {}) });
     const rows = await get('/evaluations?' + qs);
     el.innerHTML = `
-      <div class="ph"><div><h1>Activity</h1><p>Every evaluation, newest first. Open one to see the decoded instructions, the simulation and every check.</p></div>
+      <div class="ph"><div><h1>Activity</h1><p>Every evaluation, newest first. Open one to see the decoded instructions, the simulation and every check. Test runs from the <a href="#/playground" style="text-decoration:underline;text-underline-offset:3px">API Playground</a> are sandboxed and never listed here.</p></div>
         <div class="filters">
           <select data-f="decision" aria-label="Decision"><option value="">All decisions</option><option value="ALLOW">Allowed</option><option value="DENY">Denied</option><option value="REQUIRE_APPROVAL">Approval required</option></select>
           <select data-f="agentId" aria-label="Agent"><option value="">All agents</option>${agents.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('')}</select>
@@ -813,6 +814,9 @@
     let saved = null; try { saved = localStorage.getItem('ix-org'); } catch (e) {}
     selectOrg(preferOrg || (S.org && S.org.id) || saved);
   }
+
+  /* ---------------- shared with playground.js ---------------- */
+  window.ixKit = { $, esc, short, usd, ago, toast, modal, copy, confirmBox, crumb, route, get, post, api, o, S, VIEWS, ic, checksTable, effectLine, admin, issues, API };
 
   /* ---------------- boot ---------------- */
   window.ixConsole = {

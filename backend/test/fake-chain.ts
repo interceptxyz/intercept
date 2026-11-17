@@ -60,6 +60,8 @@ export class FakeChain {
       getBalance: async (k: PublicKey) => { this.guard('getBalance'); return this.pre.get(k.toBase58())?.lamports ?? 0; },
       getMultipleAccountsInfo: async (ks: PublicKey[]) => { this.guard('getMultipleAccountsInfo'); return ks.map((k) => this.info(this.pre.get(k.toBase58()))); },
       getSlot: async () => { this.guard('getSlot'); return this.slot; },
+      getAccountInfo: async (k: PublicKey) => { this.guard('getAccountInfo'); return this.info(this.pre.get(k.toBase58())); },
+      getLatestBlockhash: async () => ({ blockhash: Keypair.generate().publicKey.toBase58(), lastValidBlockHeight: this.slot }),
       getSignaturesForAddress: async (k: PublicKey, o: any = {}) => {
         const all = this.sigs.get(k.toBase58()) ?? [];
         const stop = o.until ? all.findIndex((x) => x.signature === o.until) : -1;

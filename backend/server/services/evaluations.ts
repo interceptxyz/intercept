@@ -10,7 +10,7 @@ import { Dec, HttpError, bad, dec, decStr, newId, notFound } from '../lib/util';
 import { parsePolicy } from '../policy/schema';
 import { DecodeError, parseTransaction } from '../solana/decode';
 import { Network, connection } from '../solana/rpc';
-import { buildContext, fmtUsd } from '../engine/context';
+import { Context, buildContext, fmtUsd } from '../engine/context';
 import { History, decide, firewallChecks, riskChecks, systemChecks } from '../engine/checks';
 import { alert, emit } from './webhooks';
 import { audit } from './audit';
@@ -21,7 +21,7 @@ export interface EvaluateInput {
   apiKeyId: string | null; actorId: string; reference?: string | null; ip?: string | null;
 }
 
-async function history(db: Db, agentId: string, programs: string[]): Promise<History> {
+export async function agentHistory(db: Db, agentId: string, programs: string[]): Promise<History> {
   const rows = await q(db, `SELECT value_usd, value_certain, decoded->'programs' AS programs FROM evaluations
     WHERE agent_id = $1 AND created_at > now() - interval '24 hours'
       AND (decision = 'ALLOW' OR approval_status = 'APPROVED')`, [agentId]);
@@ -54,7 +54,7 @@ export async function evaluate(db: Db, input: EvaluateInput) {
   }
   const network = agent.network as Network;
   const ctx = await buildContext(vtx, { conn: connection(network), network, wallet: agent.wallet, runSimulation: true });
-  const h = await history(db, agent.id, ctx.decoded.programs);
+  const h = await agentHistory(db, agent.id, ctx.decoded.programs);
   const checks = [
     ...systemChecks({ status: agent.status, mode: agent.integration_mode, walletVerified: !!agent.wallet_verified_at, orgEmergencyStop: agent.emergency_stop }),
     ...firewallChecks(ctx, policy),
@@ -65,20 +65,8 @@ export async function evaluate(db: Db, input: EvaluateInput) {
   const id = newId('evl');
   const approvalExpires = decision === 'REQUIRE_APPROVAL' ? new Date(Date.now() + policy.execution.approvalTtlSecs * 1000) : null;
 
-  const decoded = {
-    format: ctx.decoded.format, messageHash: ctx.decoded.messageHash, feePayer: ctx.decoded.feePayer, signers: ctx.decoded.signers,
-    writable: ctx.decoded.writable, programs: ctx.decoded.programs, unknownPrograms: ctx.decoded.unknownPrograms,
-    lookupTables: ctx.decoded.lookupTables, complete: ctx.decoded.complete,
-    instructions: ctx.allInstructions.map((i) => ({ index: i.index, stackHeight: i.stackHeight, program: i.program, programName: i.programName, supported: i.supported, effects: i.effects })),
-    transfers: ctx.transfers,
-    flows: {
-      source: ctx.flowSource,
-      outflows: [...ctx.outflows.values()].map(flowView), inflows: [...ctx.inflows.values()].map(flowView),
-    },
-    wallet: ctx.wallet, walletConfigured: ctx.walletConfigured, issues: [...ctx.decoded.issues, ...ctx.rpcIssues, ...ctx.priceErrors, ...ctx.valueIssues],
-  };
-  const sim = ctx.simulation && { status: ctx.simulation.status, reason: ctx.simulation.reason, slot: ctx.simulation.slot, error: ctx.simulation.error, unitsConsumed: ctx.simulation.unitsConsumed,
-    logs: ctx.simulation.logs, solChanges: ctx.simulation.solChanges, tokenChanges: ctx.simulation.tokenChanges, trackedAccounts: ctx.simulation.trackedAccounts, network };
+  const decoded = decodedView(ctx);
+  const sim = simulationView(ctx, network);
 
   const result = await tx(async (c) => {
     await c.query(`INSERT INTO evaluations(id, org_id, agent_id, api_key_id, source, kind, network, policy_id, policy_version, message_hash, decision, reasons,
@@ -105,6 +93,28 @@ export async function evaluate(db: Db, input: EvaluateInput) {
   });
   await recordCustomer(db, input.orgId, { decision, reasons, valueUsd: ctx.valueUsd === null ? null : decStr(ctx.valueUsd, 2), network, programs: ctx.decoded.programs, instructions: ctx.allInstructions, simStatus: ctx.simulation?.status ?? null, latencyMs: latency }).catch(() => undefined);
   return { id, result, row: await getEvaluation(db, input.orgId, id) };
+}
+
+/** Decoded transaction as stored and returned (shared with the playground sandbox). */
+export function decodedView(ctx: Context) {
+  return {
+    format: ctx.decoded.format, messageHash: ctx.decoded.messageHash, feePayer: ctx.decoded.feePayer, signers: ctx.decoded.signers,
+    writable: ctx.decoded.writable, programs: ctx.decoded.programs, unknownPrograms: ctx.decoded.unknownPrograms,
+    lookupTables: ctx.decoded.lookupTables, complete: ctx.decoded.complete,
+    instructions: ctx.allInstructions.map((i) => ({ index: i.index, stackHeight: i.stackHeight, program: i.program, programName: i.programName, supported: i.supported, effects: i.effects })),
+    transfers: ctx.transfers,
+    flows: {
+      source: ctx.flowSource,
+      outflows: [...ctx.outflows.values()].map(flowView), inflows: [...ctx.inflows.values()].map(flowView),
+    },
+    wallet: ctx.wallet, walletConfigured: ctx.walletConfigured, issues: [...ctx.decoded.issues, ...ctx.rpcIssues, ...ctx.priceErrors, ...ctx.valueIssues],
+  };
+}
+
+export function simulationView(ctx: Context, network: Network) {
+  const s = ctx.simulation;
+  return s && { status: s.status, reason: s.reason, slot: s.slot, error: s.error, unitsConsumed: s.unitsConsumed,
+    logs: s.logs, solChanges: s.solChanges, tokenChanges: s.tokenChanges, trackedAccounts: s.trackedAccounts, network };
 }
 
 const flowView = (a: any) => ({ asset: a.asset, mint: a.mint, raw: a.raw.toString(), decimals: a.decimals, amount: a.units === null ? null : decStr(a.units), usd: a.usd === null ? null : decStr(a.usd, 2),

@@ -11,6 +11,7 @@ import { agentKey, body, ip } from './context';
 import { waitUntil } from '@vercel/functions';
 import { feed, refreshScan, stats } from '../services/feed';
 import { tick } from '../services/watch';
+import { isPlayground, sandboxEvaluate } from '../services/playground';
 
 const txBody = z.object({ transaction: z.string().min(80).max(2000), reference: z.string().max(100).optional() });
 
@@ -51,6 +52,8 @@ export function agentRoutes(app: FastifyInstance) {
     // test keys are for devnet agents, live keys for mainnet agents (fixed at key creation)
     if ((agent.network === 'mainnet-beta') !== (p.environment === 'live')) throw new HttpError(403, 'ENVIRONMENT_MISMATCH', 'Key environment does not match the agent network.');
     const b = body(req, txBody);
+    // requests replayed by the API Playground: same key, scope, rate limit and engine, nothing recorded or authorized
+    if (isPlayground(req)) return { ...(await sandboxEvaluate(db, { orgId: p.orgId, agentId: p.agentId, transaction: b.transaction, kind, via: 'api_key' })), reference: b.reference ?? null };
     const out = await evaluate(db, { orgId: p.orgId, agentId: p.agentId, transaction: b.transaction, source: 'api', kind, apiKeyId: p.keyId, actorId: p.keyId, reference: b.reference, ip: ip(req) });
     for (const d of out.result.deliveries) await attempt(db, d).catch(() => undefined);
     return { ...out.row, authorization: out.result.authorization ?? out.row.authorization };
